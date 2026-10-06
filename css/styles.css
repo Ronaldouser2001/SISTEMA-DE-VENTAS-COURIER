@@ -1,0 +1,267 @@
+/* ==========================================
+   ESTILOS GENERALES Y LAYOUT BASE
+   ========================================== */
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background-color: #f4f6f9;
+    color: #2c3e50;
+    margin: 0;
+    padding: 0;
+}
+
+/* ==========================================
+   LOGIN (index.html)
+   ========================================== */
+.login-body {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.login-card {
+    max-width: 420px !important;
+    width: 100%;
+    border: none !important;
+    border-radius: 16px !important;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3) !important;
+    background: #ffffff !important;
+    padding: 2.5rem !important;
+}
+
+/* ==========================================
+   PANEL Y MENÚ LATERAL (dashboard.html)
+   ========================================== */
+#sidebar {
+    width: 260px;
+    min-width: 260px;
+    min-height: 100vh;
+    background-color: #1e293b !important;
+    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.05);
+}
+
+#sidebar h4 {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+#sidebar ul, 
+#sidebar .submenu {
+    list-style: none !important;
+    padding-left: 0 !important;
+    margin-bottom: 0;
+}
+
+#sidebar .submenu {
+    padding-left: 1.25rem !important;
+}
+
+#sidebar .nav-link {
+    border-radius: 8px;
+    transition: all 0.2s ease-in-out;
+    padding: 8px 12px;
+}
+
+#sidebar .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #ffffff !important;
+}
+
+/* Área Principal de Contenido */
+.content {
+    flex: 1;
+    padding: 2rem !important;
+    background-color: #f4f6f9 !important;
+    min-height: 100vh;
+    overflow-y: auto;
+}
+
+/* Header del Área Principal */
+.content > .d-flex {
+    background-color: #ffffff;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 1.5rem !important;
+}
+
+/* ==========================================
+   MÓDULO DE TARIFAS Y COMPONENTES
+   ========================================== */
+.tarifas-card {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.tarifas-card .card-title {
+    font-weight: 600;
+    color: #1e293b;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 8px;
+}
+
+/* Dual Box / Listas de Ciudades */
+.city-list {
+    height: 320px !important;
+    overflow-y: auto !important;
+    background-color: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 8px !important;
+}
+
+.city-item {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    transition: background 0.15s ease;
+}
+
+.city-item:hover {
+    background-color: #f1f5f9;
+}
+
+/* Botón Flotante de Guardado */
+.btn-floating-save {
+    position: fixed;
+    bottom: 30px;
+    right: 35px;
+    z-index: 1050;
+    border-radius: 30px !important;
+    padding: 12px 28px !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    box-shadow: 0 8px 24px rgba(25, 135, 84, 0.35) !important;
+}
+
+/* Reglas de Impresión */
+@media print {
+    #sidebar, .btn-floating-save, #btnVistaPrevia, .input-group-text, .btn {
+        display: none !important;
+    }
+    .content {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+    }
+    .tarifas-card {
+        box-shadow: none !important;
+        border: 1px solid #999 !important;
+    }
+}
+
+/* ==========================================
+   ESTILOS MÓDULO TARIFARIO APROBADO
+   ========================================== */
+.bloque-seccion {
+    background-color: #ffffff;
+    border: 2px solid #cbd5e1;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.bloque-header {
+    padding: 12px 20px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid #cbd5e1;
+}
+
+.header-azul { background-color: #1e3a8a; color: #ffffff; }
+.header-verde { background-color: #065f46; color: #ffffff; }
+.header-gris { background-color: #334155; color: #ffffff; }
+
+.btn-paso {
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 8px;
+    background-color: #ffffff;
+    color: #1e3a8a;
+}
+
+.box-ciudades {
+    height: 360px;
+    overflow-y: auto;
+    background-color: #f8fafc;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+}
+
+.item-ciudad {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #ffffff;
+}
+
+.item-ciudad:last-child {
+    border-bottom: none;
+}
+
+.item-bloqueado {
+    background-color: #f1f5f9;
+}
+
+.btn-accion {
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 8px;
+}
+
+.btn-flotante-guardar {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1040;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+    border: 2px solid #ffffff;
+    border-radius: 50rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-flotante-guardar:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+}
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #seccionImprimible, #seccionImprimible * {
+        visibility: visible;
+    }
+    #seccionImprimible {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    .no-print {
+        display: none !important;
+    }
+}
