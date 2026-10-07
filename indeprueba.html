@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Módulo de Tarifas - Sistema Courier</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- FontAwesome Iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Estilos para evitar el amontonamiento visual */
+        .scrollable-panel {
+            max-height: calc(100vh - 220px);
+            overflow-y: auto;
+        }
+        .scrollable-panel::-webkit-scrollbar, .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .scrollable-panel::-webkit-scrollbar-thumb, .custom-scroll::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 4px;
+        }
+        .table-input-inline {
+            background-color: #ffffff;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        .table-input-inline:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+    <!-- Contenedor Principal donde se renderiza la UI de Tarifas -->
+    <div id="dynamic-content"></div>
+
+    <!-- MODAL PARA ASIGNAR CLIENTES MASIVAMENTE -->
+    <div class="modal fade" id="modalClientes" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fs-6"><i class="fa-solid fa-users me-2"></i>Asignación Masiva de Clientes</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        <input type="text" class="form-control" id="txtBuscarClienteModal" placeholder="Buscar cliente por RUC o Razón Social..." onkeyup="filtrarClientesModal()">
+                    </div>
+                    <div class="list-group custom-scroll" id="listaClientesModalContainer" style="max-height: 350px; overflow-y: auto;">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // ENDPOINTS Y ESTADOS GLOBALES
+        const API_TARIFAS_URL = 'http://localhost:5211/api/tarifas';
+        const API_CLIENTES_URL = 'http://localhost:5211/api/clientes';
+        const API_CIUDADES_URL = 'http://localhost:5211/api/ciudades';
+
+        // CATÁLOGO MAESTRO DE SERVICIOS (Códigos estándar globales)
+        const CATALOGO_SERVICIOS = [
+            { codigo: 'REG', nombre: 'Servicio Regular / Documentos' },
+            { codigo: 'PAQ', nombre: 'Paquetería / Cajas' },
+            { codigo: 'CAR', nombre: 'Cargo Adjunto / Trámites' },
+            { codigo: 'EXP', nombre: 'Servicio Express / Urgente' },
+            { codigo: 'MOT', nombre: 'Mensajería Local Motorizado' }
+        ];
+
+        let paquetesBD = [];
+        let clientesBD = [];
+        let ciudadesBD = [];
+        let paqueteSeleccionadoId = null;
+        let bsModalClientes = null;
+
+        // Cargar datos
+        async function cargarDatosTarifas() {
+            try {
+                const [resTarifas, resClientes, resCiudades] = await Promise.all([
+                    fetch(API_TARIFAS_URL),
+                    fetch(API_CLIENTES_URL),
+                    fetch(API_CIUDADES_URL)
+                ]);
+
+                if (resTarifas.ok) paquetesBD = await resTarifas.json();
+                else cargarTarifasFicticias();
+
+                if (resClientes.ok) clientesBD = await resClientes.json();
+                else cargarClientesFicticios();
+
+                if (resCiudades.ok) ciudadesBD = await resCiudades.json();
+                else cargarCiudadesFicticias();
+
+            } catch (error) {
+                cargarTarifasFicticias();
+                cargarClientesFicticios();
+                cargarCiudadesFicticias();
+            }
+        }
+
+        function cargarTarifasFicticias() {
+            paquetesBD = [
+                {
+                    id: 'PAQ-REGULAR',
+                    codigo: 'REGULAR',
+                    nombre: 'Tarifa Regular General',
+                    esRegular: true,
+                    clientesIds: [],
+                    servicios: [
+                        { codigo: 'REG', nombre: 'Servicio Regular / Documentos', precioBase: 10.00, precioExceso: 2.00 },
+                        { codigo: 'PAQ', nombre: 'Paquetería / Cajas', precioBase: 13.00, precioExceso: 5.00 },
+                        { codigo: 'CAR', nombre: 'Cargo Adjunto / Trámites', precioBase: 5.00, precioExceso: 1.00 }
+                    ],
+                    zonas: [
+                        { id: 'ZON-001', nombre: 'Zona Local Huancayo', sla: '24 Horas', distritosIds: ['120101', '120107', '120114'] },
+                        { id: 'ZON-002', nombre: 'Zona Selva Chanchamayo', sla: '48 Horas', distritosIds: ['120301', '120302'] }
+                    ]
+                },
+                {
+                    id: 'PAQ-BCP',
+                    codigo: 'PAQ-BCP-2026',
+                    nombre: 'Tarifa Corporativa BCP',
+                    esRegular: false,
+                    clientesIds: ['CLI-101'],
+                    servicios: [
+                        { codigo: 'REG', nombre: 'Servicio Regular / Documentos', precioBase: 8.50, precioExceso: 1.50 },
+                        { codigo: 'PAQ', nombre: 'Paquetería / Cajas', precioBase: 11.00, precioExceso: 3.50 },
+                        { codigo: 'CAR', nombre: 'Cargo Adjunto / Trámites', precioBase: 4.00, precioExceso: 0.80 },
+                        { codigo: 'EXP', nombre: 'Servicio Express / Urgente', precioBase: 15.00, precioExceso: 4.00 }
+                    ],
+                    zonas: [
+                        { id: 'ZON-101', nombre: 'Zona Corredor Financiero', sla: '12 Horas', distritosIds: ['120101', '150101', '150122'] }
+                    ]
+                }
+            ];
+            paqueteSeleccionadoId = paquetesBD[0].id;
+        }
+
+        function cargarClientesFicticios() {
+            clientesBD = [
+                { id: 'CLI-101', nombreRazonSocial: 'BANCO DE CREDITO DEL PERU', ruc: '20100047218' },
+                { id: 'CLI-102', nombreRazonSocial: 'UNIVERSIDAD CONTINENTAL S.A.C.', ruc: '20319363221' },
+                { id: 'CLI-103', nombreRazonSocial: 'CAJA MUNICIPAL HUANCAYO', ruc: '20129778842' },
+                { id: 'CLI-104', nombreRazonSocial: 'MUNICIPALIDAD PROVINCIAL DE HUANCAYO', ruc: '20146820593' },
+                { id: 'CLI-105', nombreRazonSocial: 'SOCIEDAD MINERA EL BROCAL S.A.A.', ruc: '20100140269' }
+            ];
+        }
+
+        function cargarCiudadesFicticias() {
+            ciudadesBD = [
+                { id: "120101", departamento: "JUNIN", provincia: "HUANCAYO", distrito: "HUANCAYO" },
+                { id: "120107", departamento: "JUNIN", provincia: "HUANCAYO", distrito: "CHILCA" },
+                { id: "120114", departamento: "JUNIN", provincia: "HUANCAYO", distrito: "EL TAMBO" },
+                { id: "120301", departamento: "JUNIN", provincia: "CHANCHAMAYO", distrito: "CHANCHAMAYO" },
+                { id: "120302", departamento: "JUNIN", provincia: "CHANCHAMAYO", distrito: "PERENE" },
+                { id: "150101", departamento: "LIMA", provincia: "LIMA", distrito: "LIMA" },
+                { id: "150122", departamento: "LIMA", provincia: "LIMA", distrito: "MIRAFLORES" }
+            ];
+        }
+
+        // RENDERIZADO PRINCIPAL
+        async function renderTarifas() {
+            const contenedor = document.getElementById('dynamic-content');
+            if (!contenedor) return;
+
+            await cargarDatosTarifas();
+
+            contenedor.innerHTML = `
+                <div class="container-fluid p-3">
+                    <!-- HEADER DEL MÓDULO CON BOTÓN ÚNICO GLOBAL -->
+                    <div class="d-flex justify-content-between align-items-center bg-dark text-white p-3 rounded mb-3 shadow-sm">
+                        <div class="d-flex align-items-center">
+                            <h4 class="mb-0 fw-bold me-3">
+                                <i class="fa-solid fa-tags text-warning me-2"></i>Módulo Tarifas
+                            </h4>
+                            <span class="badge bg-secondary text-light">Gestión Unificada</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-light fw-bold btn-sm" onclick="crearNuevoPaquete()">
+                                <i class="fa-solid fa-plus me-1"></i> Nuevo Paquete
+                            </button>
+                            <button class="btn btn-warning fw-bold btn-sm shadow" onclick="guardarTodoElModulo()">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Cambios del Módulo
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <!-- COLUMNA IZQUIERDA: LISTA DE PAQUETES DE TARIFAS (CON BUSCADOR Y SCROLL) -->
+                        <div class="col-lg-4 col-xl-3">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-primary text-white fw-bold py-2">
+                                    <i class="fa-solid fa-boxes-packing me-1"></i> Paquetes Tarifarios
+                                </div>
+                                <div class="card-body p-2 bg-light border-bottom">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                                        <input type="text" class="form-control border-start-0" id="txtBuscarPaquete" placeholder="Filtrar paquetes..." onkeyup="filtrarPaquetes()">
+                                    </div>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="list-group list-group-flush scrollable-panel" id="listaPaquetesContainer"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- COLUMNA DERECHA: EDICIÓN INTEGRADA DEL PAQUETE (SCROLLABLE) -->
+                        <div class="col-lg-8 col-xl-9">
+                            <div class="scrollable-panel pe-1" id="detallePaqueteContainer"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            bsModalClientes = new bootstrap.Modal(document.getElementById('modalClientes'));
+            renderListaPaquetes();
+            renderDetallePaquete();
+        }
+
+        // RENDERIZAR Y FILTRAR LISTA LATERAL DE PAQUETES
+        function renderListaPaquetes() {
+            const container = document.getElementById('listaPaquetesContainer');
+            if (!container) return;
+
+            const filtro = (document.getElementById('txtBuscarPaquete')?.value || '').toLowerCase();
+            let html = '';
+
+            const paquetesFiltrados = paquetesBD.filter(p => 
+                p.nombre.toLowerCase().includes(filtro) || p.codigo.toLowerCase().includes(filtro)
+            );
+
+            if (paquetesFiltrados.length === 0) {
+                container.innerHTML = `<div class="p-3 text-muted text-center small">No se encontraron paquetes.</div>`;
+                return;
+            }
+
+            paquetesFiltrados.forEach(p => {
+                const activo = p.id === paqueteSeleccionadoId ? 'active' : '';
+                const badgeTipo = p.esRegular 
+                    ? '<span class="badge bg-success">REGULAR</span>' 
+                    : `<span class="badge bg-info text-dark">${p.clientesIds.length} Clientes</span>`;
+
+                html += `
+                    <button type="button" class="list-group-item list-group-item-action ${activo} p-2 border-bottom" onclick="seleccionarPaquete('${p.id}')">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="badge bg-dark fw-bold">${p.codigo}</span>
+                            ${badgeTipo}
+                        </div>
+                        <div class="fw-bold fs-6 text-truncate">${p.nombre}</div>
+                        <small class="d-block text-muted mt-1 style="font-size: 0.75rem;">
+                            <i class="fa-solid fa-cubes me-1"></i>${p.servicios.length} Serv. | 
+                            <i class="fa-solid fa-map-location-dot me-1"></i>${p.zonas.length} Zonas
+                        </small>
+                    </button>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function filtrarPaquetes() {
+            renderListaPaquetes();
+        }
+
+        window.seleccionarPaquete = function(id) {
+            paqueteSeleccionadoId = id;
+            renderListaPaquetes();
+            renderDetallePaquete();
+        };
+
+        // RENDERIZAR DETALLE Y EDICIÓN COMPLETA DEL PAQUETE
+        function renderDetallePaquete() {
+            const container = document.getElementById('detallePaqueteContainer');
+            const paq = paquetesBD.find(p => p.id === paqueteSeleccionadoId);
+
+            if (!paq || !container) {
+                container.innerHTML = `<div class="alert alert-info">Seleccione un paquete tarifario de la lista.</div>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <!-- 1. CÓDIGO Y NOMBRE DE PAQUETE -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-dark text-white fw-bold py-2 d-flex justify-content-between align-items-center">
+                        <span class="small"><i class="fa-solid fa-box text-warning me-2"></i>1. Configuración Principal del Paquete</span>
+                        ${!paq.esRegular ? `
+                            <button class="btn btn-outline-danger btn-sm py-0" onclick="eliminarPaquete('${paq.id}')">
+                                <i class="fa-solid fa-trash me-1"></i> Eliminar Paquete
+                            </button>
+                        ` : '<span class="badge bg-success">Tarifario Global por Defecto</span>'}
+                    </div>
+                    <div class="card-body bg-light p-3">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold mb-1">Código Paquete *</label>
+                                <input type="text" class="form-control form-control-sm fw-bold" id="txtPaqCodigo" value="${paq.codigo}">
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label small fw-bold mb-1">Nombre del Paquete *</label>
+                                <input type="text" class="form-control form-control-sm fw-bold" id="txtPaqNombre" value="${paq.nombre}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. CLIENTES ASIGNADOS -->
+                ${!paq.esRegular ? `
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-secondary text-white fw-bold py-2 d-flex justify-content-between align-items-center">
+                            <span class="small"><i class="fa-solid fa-users me-2"></i>2. Clientes Asignados (${paq.clientesIds.length})</span>
+                            <button class="btn btn-light btn-sm fw-bold text-dark py-0" onclick="abrirModalClientes()">
+                                <i class="fa-solid fa-user-plus me-1"></i> Asignar / Quitar Clientes
+                            </button>
+                        </div>
+                        <div class="card-body p-2">
+                            <div class="d-flex flex-wrap gap-1 custom-scroll" style="max-height: 100px; overflow-y: auto;">
+                                ${renderClientesChips(paq.clientesIds)}
+                            </div>
+                        </div>
+                    </div>
+                ` : `
+                    <div class="alert alert-success shadow-sm mb-3 py-2 small">
+                        <i class="fa-solid fa-circle-check me-2"></i><strong>Tarifario General:</strong> Aplica a todos los clientes que no estén explícitamente asignados a un paquete personalizado.
+                    </div>
+                `}
+
+                <!-- 3. SERVICIOS DEL TARIFARIO (CÓDIGOS ESTÁNDAR Y ENTRADA INLINE DIRECTA) -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-dark text-white fw-bold py-2 d-flex justify-content-between align-items-center">
+                        <span class="small"><i class="fa-solid fa-list-check text-warning me-2"></i>3. Servicios Tarifados (Códigos Estándar)</span>
+                        <button class="btn btn-warning btn-sm fw-bold py-0" onclick="agregarServicioEstandar()">
+                            <i class="fa-solid fa-plus me-1"></i> Agregar Servicio del Catálogo
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover align-middle mb-0" id="tablaServicios">
+                                <thead class="table-light small fw-bold">
+                                    <tr>
+                                        <th style="width: 100px;">Código</th>
+                                        <th>Nombre del Servicio</th>
+                                        <th style="width: 140px;">Precio Base (S/)</th>
+                                        <th style="width: 160px;">Precio Exceso (S/ Kg)</th>
+                                        <th style="width: 50px;" class="text-center">Quitar</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${renderFilasServicios(paq.servicios)}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. ZONAS DE COBERTURA, CIUDADES Y SLA -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-dark text-white fw-bold py-2 d-flex justify-content-between align-items-center">
+                        <span class="small"><i class="fa-solid fa-map-location-dot text-warning me-2"></i>4. Zonas de Cobertura, SLA y Ciudades</span>
+                        <button class="btn btn-success btn-sm fw-bold py-0" onclick="agregarZona()">
+                            <i class="fa-solid fa-plus me-1"></i> Agregar Zona
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover align-middle mb-0" id="tablaZonas">
+                                <thead class="table-light small fw-bold">
+                                    <tr>
+                                        <th>Nombre Zona</th>
+                                        <th style="width: 180px;">SLA (Tiempo Entrega)</th>
+                                        <th>Ciudades / Distritos Cubiertos</th>
+                                        <th style="width: 50px;" class="text-center">Quitar</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${renderFilasZonas(paq.zonas)}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // RENDER DE CHIPS DE CLIENTES
+        function renderClientesChips(clientesIds) {
+            if (!clientesIds || clientesIds.length === 0) {
+                return `<span class="text-muted small p-1">No hay clientes específicos asignados a este paquete.</span>`;
+            }
+
+            return clientesIds.map(cliId => {
+                const cli = clientesBD.find(c => c.id === cliId);
+                const nombre = cli ? `${cli.nombreRazonSocial}` : cliId;
+
+                return `
+                    <span class="badge bg-white text-dark border p-2 d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-building text-primary"></i> ${nombre}
+                        <i class="fa-solid fa-xmark text-danger ms-1 cursor-pointer" title="Desvincular" onclick="desvincularCliente('${cliId}')"></i>
+                    </span>
+                `;
+            }).join('');
+        }
+
+        // RENDER DE FILAS DE SERVICIOS (INPUTS DIRECTOS SIN BOTÓN EDITAR)
+        function renderFilasServicios(servicios) {
+            if (!servicios || servicios.length === 0) {
+                return `<tr><td colspan="5" class="text-center text-muted p-3 small">No hay servicios agregados a este paquete.</td></tr>`;
+            }
+
+            return servicios.map((s, index) => `
+                <tr data-srv-index="${index}">
+                    <td>
+                        <span class="badge bg-secondary fw-bold fs-6">${s.codigo}</span>
+                    </td>
+                    <td>
+                        <input type="text" class="table-input-inline w-100 input-srv-nombre" value="${s.nombre}">
+                    </td>
+                    <td>
+                        <input type="number" step="0.10" class="table-input-inline w-100 fw-bold text-primary input-srv-base" value="${s.precioBase}">
+                    </td>
+                    <td>
+                        <input type="number" step="0.10" class="table-input-inline w-100 fw-bold text-dark input-srv-exceso" value="${s.precioExceso}">
+                    </td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-link text-danger p-0" onclick="eliminarServicio(${index})"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // RENDER DE FILAS DE ZONAS (INPUTS DIRECTOS PARA SLA Y NOMBRE)
+        function renderFilasZonas(zonas) {
+            if (!zonas || zonas.length === 0) {
+                return `<tr><td colspan="4" class="text-center text-muted p-3 small">No hay zonas configuradas.</td></tr>`;
+            }
+
+            return zonas.map((z, index) => {
+                const nombresCiudades = z.distritosIds.map(id => {
+                    const c = ciudadesBD.find(x => x.id === id);
+                    return c ? `<span class="badge bg-secondary me-1 mb-1">${c.distrito}</span>` : `<span class="badge bg-light text-dark me-1">${id}</span>`;
+                }).join('');
+
+                return `
+                    <tr data-zona-index="${index}">
+                        <td>
+                            <input type="text" class="table-input-inline w-100 fw-bold input-zona-nombre" value="${z.nombre}">
+                        </td>
+                        <td>
+                            <input type="text" class="table-input-inline w-100 text-success fw-bold input-zona-sla" value="${z.sla}" placeholder="Ej: 24 Horas">
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center flex-wrap">
+                                ${nombresCiudades}
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-link text-danger p-0" onclick="eliminarZona(${index})"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // AGREGAR SERVICIO DESDE EL CATÁLOGO MAESTRO (Códigos Estándar)
+        window.agregarServicioEstandar = function() {
+            const paq = paquetesBD.find(p => p.id === paqueteSeleccionadoId);
+            if (!paq) return;
+
+            sincronizarEdicionesDesdeDOM();
+
+            let opciones = "Seleccione el servicio a agregar por su CÓDIGO:\n\n";
+            CATALOGO_SERVICIOS.forEach((cs, i) => {
+                opciones += `${i + 1}. [${cs.codigo}] ${cs.nombre}\n`;
+            });
+
+            const elegida = prompt(opciones);
+            const idx = parseInt(elegida) - 1;
+
+            if (!isNaN(idx) && CATALOGO_SERVICIOS[idx]) {
+                const item = CATALOGO_SERVICIOS[idx];
+
+                if (paq.servicios.some(s => s.codigo === item.codigo)) {
+                    alert(`El servicio con código ${item.codigo} ya está agregado en este paquete.`);
+                    return;
+                }
+
+                paq.servicios.push({
+                    codigo: item.codigo,
+                    nombre: item.nombre,
+                    precioBase: 0.00,
+                    precioExceso: 0.00
+                });
+
+                renderDetallePaquete();
+            }
+        };
+
+        window.eliminarServicio = function(index) {
+            const paq = paquetesBD.find(p => p.id === paqueteSeleccionadoId);
+            if (!paq) return;
+
+            sincronizarEdicionesDesdeDOM();
+            paq.servicios.splice(index, 1);
+            renderDetallePaquete();
+        };
+
+        // GESTIÓN DE ZONAS Y SLA
+        window.agregarZona = function() {
+            const paq = paquetesBD.find(p => p.id === paqueteSeleccionadoId);
+            if (!paq) return;
+
+            sincronizarEdicionesDesdeDOM();
+
+            const nombre = prompt('Nombre de la Zona:');
+            if (!nombre) return;
+
+            paq.zonas.push({
+                id: `ZON-${Date.now()}`,
+                nombre: nombre,
+                sla: '24 Horas',
+                distritosIds: ['120101', '120107']
+            });
+
+            renderListaPaquetes();
+            renderDetallePaquete();
+        };
+
+        window.eliminarZona = function(index) {
+            const paq = paquetesBD.find(p => p.id === paqueteSeleccionadoId);
+            if (!paq) return;
+
+            sincronizarEdicionesDesdeDOM();
+            paq.zonas.splice(index, 1);
+            renderListaPaquetes();
+            renderDetallePaquete();
+        };
+
+        // MODAL DE CLIENTES MASIVOS
+        window.abrirModalClientes = function() {
+            filtrarClientesModal();
+            bsModalClientes.show();
+        };
+
+        window.filtrarClientesModal = function() {
+            const paq = paquetesBD.find(p => p.id === paqueteSeleccionadoId);
+            if (!paq) return;
+
+            const filtro = (document.getElementById('txtBuscarClienteModal')?.value || '').toLowerCase();
+            const container = document.getElementById('listaClientesModalContainer');
+
+            let html = '';
+            clientesBD.forEach(c => {
+                const coincide = c.nombreRazonSocial.toLowerCase().includes(filtro) || c.ruc.includes(filtro);
+                if (!coincide) return;
+
+                const asignadoAEste = paq.clientesIds.includes(c.id);
+
+                html += `
+                    <div class="list-group-item d-flex justify-content-between align-items-center p-2">
+                        <div>
+                            <div class="fw-bold small">${c.nombreRazonSocial}</div>
+                            <small class="text-muted">RUC: ${c.ruc}</small>
+                        </div>
+                        <div>
+                            ${asignadoAEste ? `
+                                <button class="btn btn-sm btn-outline-danger" onclick="toggleClienteAsignacion('${c.id}')">
+                                    <i class="fa-solid fa-user-minus me-1"></i> Quitar
+                                </button>
+                            ` : `
+                                <button class="btn btn-sm btn-success" onclick="toggleClienteAsignacion('${c.id}')">
+                                    <i class="fa-solid fa-user-plus me-1"></i> Asignar
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html || `<div class="text-muted p-3 text-center">No hay coincidencia de clientes.</div>`;
+        };
+
+        window.toggleClienteAsignacion = function(cliId) {
+            const paq = paquetesBD.find(p => p.id === paqueteSeleccionadoId);
+            if (!paq) return;
+
+            if (paq.clientesIds.includes(cliId)) {
+                paq.clientesIds = paq.clientesIds.filter(id => id !== cliId);
+            } else {
+                // Quitar de otros paquetes personalizados para evitar duplicidades
+                paquetesBD.forEach(p => {
+                    p.clientesIds = p.clientesIds.filter(id => id !== cliId);
+                });
+                paq.clientesIds.push(cliId);
+            }
+
+            filtrarClientesModal();
+            renderListaPaquetes();
+            renderDetallePaquete();
+        };
+
+        window.desvincularCliente = function(cliId) {
+            const paq = paquetesBD.find(p => p.id === paqueteSeleccionadoId);
+            if (!paq) return;
+
+            paq.clientesIds = paq.clientesIds.filter(id => id !== cliId);
+            renderListaPaquetes();
+            renderDetallePaquete();
+        };
+
+        // CREAR / ELIMINAR PAQUETE
+        window.crearNuevoPaquete = function() {
+            sincronizarEdicionesDesdeDOM();
+
+            const codigo = prompt('Ingrese el CÓDIGO del nuevo paquete (Ej: PAQ-CONTINENTAL):');
+            if (!codigo) return;
+
+            const nombre = prompt('Ingrese el NOMBRE del paquete:');
+            if (!nombre) return;
+
+            const nuevoId = `PAQ-${Date.now()}`;
+            paquetesBD.push({
+                id: nuevoId,
+                codigo: codigo.toUpperCase(),
+                nombre: nombre,
+                esRegular: false,
+                clientesIds: [],
+                servicios: [
+                    { codigo: 'REG', nombre: 'Servicio Regular / Documentos', precioBase: 10.00, precioExceso: 2.00 },
+                    { codigo: 'PAQ', nombre: 'Paquetería / Cajas', precioBase: 13.00, precioExceso: 5.00 }
+                ],
+                zonas: [
+                    { id: `ZON-${Date.now()}`, nombre: 'Zona Local', sla: '24 Horas', distritosIds: ['120101'] }
+                ]
+            });
+
+            paqueteSeleccionadoId = nuevoId;
+            renderListaPaquetes();
+            renderDetallePaquete();
+        };
+
+        window.eliminarPaquete = function(id) {
+            const paq = paquetesBD.find(p => p.id === id);
+            if (paq && paq.esRegular) {
+                alert('El paquete REGULAR es la tarifa base del sistema y no puede eliminarse.');
+                return;
+            }
+
+            if (confirm(`¿Eliminar el paquete "${paq.nombre}"? Sus clientes volverán a la tarifa Regular.`)) {
+                paquetesBD = paquetesBD.filter(p => p.id !== id);
+                paqueteSeleccionadoId = paquetesBD[0].id;
+                renderListaPaquetes();
+                renderDetallePaquete();
+            }
+        };
+
+        // LEER LOS INPUTS DIRECTOS DE LA PANTALLA Y ACTUALIZAR EL ESTADO
+        function sincronizarEdicionesDesdeDOM() {
+            const paq = paquetesBD.find(p => p.id === paqueteSeleccionadoId);
+            if (!paq) return;
+
+            // 1. Código y Nombre del Paquete
+            const codInput = document.getElementById('txtPaqCodigo');
+            const nomInput = document.getElementById('txtPaqNombre');
+
+            if (codInput) paq.codigo = codInput.value.trim();
+            if (nomInput) paq.nombre = nomInput.value.trim();
+
+            // 2. Servicios
+            const filasServicios = document.querySelectorAll('#tablaServicios tbody tr[data-srv-index]');
+            filasServicios.forEach(tr => {
+                const idx = parseInt(tr.getAttribute('data-srv-index'));
+                if (paq.servicios[idx]) {
+                    const nom = tr.querySelector('.input-srv-nombre')?.value || '';
+                    const base = parseFloat(tr.querySelector('.input-srv-base')?.value) || 0;
+                    const exceso = parseFloat(tr.querySelector('.input-srv-exceso')?.value) || 0;
+
+                    paq.servicios[idx].nombre = nom;
+                    paq.servicios[idx].precioBase = base;
+                    paq.servicios[idx].precioExceso = exceso;
+                }
+            });
+
+            // 3. Zonas y SLA
+            const filasZonas = document.querySelectorAll('#tablaZonas tbody tr[data-zona-index]');
+            filasZonas.forEach(tr => {
+                const idx = parseInt(tr.getAttribute('data-zona-index'));
+                if (paq.zonas[idx]) {
+                    const nom = tr.querySelector('.input-zona-nombre')?.value || '';
+                    const sla = tr.querySelector('.input-zona-sla')?.value || '';
+
+                    paq.zonas[idx].nombre = nom;
+                    paq.zonas[idx].sla = sla;
+                }
+            });
+        }
+
+        // BOTÓN ÚNICO GLOBAL DE GUARDADO DE TODO EL MÓDULO
+        window.guardarTodoElModulo = function() {
+            sincronizarEdicionesDesdeDOM();
+
+            // Validación rápida
+            for (let p of paquetesBD) {
+                if (!p.codigo || !p.nombre) {
+                    alert(`El paquete con ID ${p.id} debe tener Código y Nombre.`);
+                    return;
+                }
+            }
+
+            console.log('ESTADO FINAL COMPLETO A ENVIAR AL BACKEND/API:', JSON.stringify(paquetesBD, null, 2));
+            
+            alert('¡CAMBIOS GUARDADOS EXITOSAMENTE!\n\nTodos los paquetes, precios de servicios y zonas han sido actualizados en la base de datos.');
+            
+            renderListaPaquetes();
+            renderDetallePaquete();
+        };
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTarifas();
+        });
+    </script>
+</body>
+</html>

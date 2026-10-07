@@ -13,7 +13,11 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ApiCourier")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
+<<<<<<< Updated upstream
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+=======
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+166fe0ed64e6f7add43fbb02d33b21596ca7bb9a")]
+>>>>>>> Stashed changes
 [assembly: System.Reflection.AssemblyProductAttribute("ApiCourier")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ApiCourier")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

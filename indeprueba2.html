@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Módulo de Tarifas - Courier</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- FontAwesome Iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-principal: #f8fafc;
+            --color-card: #ffffff;
+            --color-borde: #e2e8f0;
+            --texto-principal: #1e293b;
+            --texto-secundario: #64748b;
+            --primary-accent: #2563eb;
+            --primary-soft: #eff6ff;
+            --success-accent: #16a34a;
+            --danger-accent: #dc2626;
+        }
+
+        body {
+            background-color: var(--bg-principal);
+            color: var(--texto-principal);
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        }
+
+        /* Paneles Limpios */
+        .card-minimal {
+            background: var(--color-card);
+            border: 1px solid var(--color-borde);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+        }
+
+        /* Botones Amigables */
+        .btn-minimal-primary {
+            background-color: var(--primary-accent);
+            color: #fff;
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            border: none;
+        }
+        .btn-minimal-primary:hover {
+            background-color: #1d4ed8;
+            color: #fff;
+        }
+
+        .btn-minimal-success {
+            background-color: var(--success-accent);
+            color: #fff;
+            font-weight: 700;
+            border-radius: 8px;
+            padding: 0.6rem 1.2rem;
+            border: none;
+            box-shadow: 0 2px 4px rgba(22, 163, 74, 0.2);
+        }
+        .btn-minimal-success:hover {
+            background-color: #15803d;
+            color: #fff;
+        }
+
+        /* Contenedor con Scroll Limpio */
+        .scrollable-panel {
+            max-height: calc(100vh - 160px);
+            overflow-y: auto;
+        }
+        .scrollable-panel::-webkit-scrollbar, .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .scrollable-panel::-webkit-scrollbar-thumb, .custom-scroll::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        /* Elementos Seleccionados */
+        .item-paquete {
+            border: 1px solid transparent;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .item-paquete:hover {
+            background-color: var(--primary-soft);
+        }
+        .item-paquete.activo {
+            background-color: var(--primary-soft);
+            border-color: var(--primary-accent);
+        }
+
+        /* Entradas de Texto Simplificadas */
+        .input-easy {
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.95rem;
+            color: var(--texto-principal);
+        }
+        .input-easy:focus {
+            background-color: #ffffff;
+            border-color: var(--primary-accent);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        .paso-numero {
+            width: 28px;
+            height: 28px;
+            background-color: var(--primary-soft);
+            color: var(--primary-accent);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body class="p-3">
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <div id="dynamic-content"></div>
+
+    <!-- MODAL DE SELECCIÓN DE CLIENTES -->
+    <div class="modal fade" id="modalClientes" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content border-0 rounded-4 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold fs-5 text-dark"><i class="fa-solid fa-users text-primary me-2"></i>Elegir Clientes para este Tarifario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">Busca la empresa o cliente y presiona el botón verde para asignarlo a este paquete de precios.</p>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                        <input type="text" class="form-control bg-light border-start-0" id="txtBuscarClienteModal" placeholder="Escribe el RUC o Nombre del cliente..." onkeyup="filtrarClientesModal()">
+                    </div>
+                    <div class="list-group custom-scroll" id="listaClientesModalContainer" style="max-height: 320px; overflow-y: auto;"></div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-primary rounded-3 px-4 fw-bold" data-bs-dismiss="modal">Listo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const API_TARIFAS_URL = 'http://localhost:5211/api/tarifas';
+        const API_CLIENTES_URL = 'http://localhost:5211/api/clientes';
+        const API_CIUDADES_URL = 'http://localhost:5211/api/ciudades';
+
+        const CATALOGO_SERVICIOS = [
+            { codigo: 'REG', nombre: 'Servicio Regular / Documentos' },
+            { codigo: 'PAQ', nombre: 'Paquetería / Cajas' },
+            { codigo: 'CAR', nombre: 'Cargo Adjunto / Trámites' },
+            { codigo: 'EXP', nombre: 'Servicio Express / Urgente' },
+            { codigo: 'MOT', nombre: 'Mensajería Local Motorizado' }
+        ];
+
+        let paquetesBD = [];
+        let clientesBD = [];
+        let ciudadesBD = [];
+        let paqueteSeleccionadoId = null;
+        let bsModalClientes = null;
+
+        async function cargarDatosTarifas() {
+            try {
+                const [resTarifas, resClientes, resCiudades] = await Promise.all([
+                    fetch(API_TARIFAS_URL),
+                    fetch(API_CLIENTES_URL),
+                    fetch(API_CIUDADES_URL)
+                ]);
+
+                if (resTarifas.ok) paquetesBD = await resTarifas.json();
+                else cargarTarifasFicticias();
+
+                if (resClientes.ok) clientesBD = await resClientes.json();
+                else cargarClientesFicticios();
+
+                if (resCiudades.ok) ciudadesBD = await resCiudades.json();
+                else cargarCiudadesFicticias();
+
+            } catch (error) {
+                cargarTarifasFicticias();
+                cargarClientesFicticios();
+                cargarCiudadesFicticias();
+            }
+        }
+
+        function cargarTarifasFicticias() {
+            paquetesBD = [
+                {
+                    id: 'PAQ-REGULAR',
+                    codigo: 'REGULAR',
+                    nombre: 'Tarifa General (Todos)',
+                    esRegular: true,
+                    clientesIds: [],
+                    servicios: [
+                        { codigo: 'REG', nombre: 'Servicio Regular / Documentos', precioBase: 10.00, precioExceso: 2.00 },
+                        { codigo: 'PAQ', nombre: 'Paquetería / Cajas', precioBase: 13.00, precioExceso: 5.00 },
+                        { codigo: 'CAR', nombre: 'Cargo Adjunto / Trámites', precioBase: 5.00, precioExceso: 1.00 }
+                    ],
+                    zonas: [
+                        { id: 'ZON-001', nombre: 'Zona Local Huancayo', sla: '24 Horas', distritosIds: ['120101', '120107', '120114'] },
+                        { id: 'ZON-002', nombre: 'Zona Chanchamayo', sla: '48 Horas', distritosIds: ['120301', '120302'] }
+                    ]
+                },
+                {
+                    id: 'PAQ-BCP',
+                    codigo: 'PAQ-BCP-2026',
+                    nombre: 'Tarifa Especial BCP',
+                    esRegular: false,
+                    clientesIds: ['CLI-101'],
+                    servicios: [
+                        { codigo: 'REG', nombre: 'Servicio Regular / Documentos', precioBase: 8.50, precioExceso: 1.50 },
+                        { codigo: 'PAQ', nombre: 'Paquetería / Cajas', precioBase: 11.00, precioExceso: 3.50 },
+                        { codigo: 'CAR', nombre: 'Cargo Adjunto BCP', precioBase: 4.00, precioExceso: 0.80 }
+                    ],
+                    zonas: [
+                        { id: 'ZON-101', nombre: 'Zona Corredor Financiero', sla: '12 Horas', distritosIds: ['120101', '150101'] }
+                    ]
+                }
+            ];
+            paqueteSeleccionadoId = paquetesBD[0].id;
+        }
+
+        function cargarClientesFicticios() {
+            clientesBD = [
+                { id: 'CLI-101', nombreRazonSocial: 'BANCO DE CREDITO DEL PERU', ruc: '20100047218' },
+                { id: 'CLI-102', nombreRazonSocial: 'UNIVERSIDAD CONTINENTAL', ruc: '20319363221' },
+                { id: 'CLI-103', nombreRazonSocial: 'CAJA MUNICIPAL HUANCAYO', ruc: '20129778842' },
+                { id: 'CLI-104', nombreRazonSocial: 'MUNICIPALIDAD DE HUANCAYO', ruc: '20146820593' }
+            ];
+        }
+
+        function cargarCiudadesFicticias() {
+            ciudadesBD = [
+                { id: "120101", departamento: "JUNIN", provincia: "HUANCAYO", distrito: "HUANCAYO" },
+                { id: "120107", departamento: "JUNIN", provincia: "HUANCAYO", distrito: "CHILCA" },
+                { id: "120114", departamento: "JUNIN", provincia: "HUANCAYO", distrito: "EL TAMBO" },
+                { id: "120301", departamento: "JUNIN", provincia: "CHANCHAMAYO", distrito: "CHANCHAMAYO" },
+                { id: "120302", departamento: "JUNIN", provincia: "CHANCHAMAYO", distrito: "PERENE" },
+                { id: "150101", departamento: "LIMA", provincia: "LIMA", distrito: "LIMA" }
+            ];
+        }
+
+        async function renderTarifas() {
+            const contenedor = document.getElementById('dynamic-content');
+            if (!contenedor) return;
+
+            await cargarDatosTarifas();
+
+            contenedor.innerHTML = `
+                <div class="container-fluid max-width-xl">
+                    <!-- ENCABEZADO PRINCIPAL Y BOTÓN DE GUARDAR GLOBAL -->
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center bg-white p-3 rounded-4 border mb-4 shadow-sm gap-3">
+                        <div>
+                            <h4 class="fw-bold mb-1 text-dark">
+                                <i class="fa-solid fa-tags text-primary me-2"></i>Módulo de Tarifas y Precios
+                            </h4>
+                            <p class="text-muted small mb-0">Selecciona un paquete de la izquierda para ver o cambiar sus precios.</p>
+                        </div>
+                        <div class="d-flex gap-2 w-100 w-md-auto">
+                            <button class="btn btn-light border fw-semibold rounded-3 btn-sm" onclick="crearNuevoPaquete()">
+                                <i class="fa-solid fa-plus text-primary me-1"></i> Crear Nuevo Paquete
+                            </button>
+                            <button class="btn btn-minimal-success fw-bold text-white btn-sm" onclick="guardarTodoElModulo()">
+                                <i class="fa-solid fa-check me-1"></i> GUARDAR TODO
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <!-- COLUMNA IZQUIERDA: LISTADO DE PAQUETES -->
+                        <div class="col-lg-4 col-xl-3">
+                            <div class="card-minimal p-3">
+                                <label class="form-label fw-bold text-dark mb-2">Lista de Paquetes</label>
+                                <div class="mb-3">
+                                    <input type="text" class="input-easy w-100" id="txtBuscarPaquete" placeholder="Buscar paquete..." onkeyup="filtrarPaquetes()">
+                                </div>
+                                <div class="scrollable-panel" id="listaPaquetesContainer"></div>
+                            </div>
+                        </div>
+
+                        <!-- COLUMNA DERECHA: CONFIGURACIÓN DETALLADA -->
+                        <div class="col-lg-8 col-xl-9">
+                            <div class="scrollable-panel pe-1" id="detallePaqueteContainer"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            bsModalClientes = new bootstrap.Modal(document.getElementById('modalClientes'));
+            renderListaPaquetes();
+            renderDetallePaquete();
+        }
+
+        function renderListaPaquetes() {
+            const container = document.getElementById('listaPaquetesContainer');
+            if (!container) return;
+
+            const filtro = (document.getElementById('txtBuscarPaquete')?.value || '').toLowerCase();
+            let html = '';
+
+            const paquetesFiltrados = paquetesBD.filter(p => 
+                p.nombre.toLowerCase().includes(filtro) || p.codigo.toLowerCase().includes(filtro)
+            );
+
+            if (paquetesFiltrados.length === 0) {
+                container.innerHTML = `<div class="p-3 text-muted text-center small">No hay paquetes.</div>`;
+                return;
+            }
+
+            paquetesFiltrados.forEach(p => {
+                const esActivo = p.id === paqueteSeleccionadoId ? 'activo' : '';
+                const tipoTexto = p.esRegular ? 'General' : `${p.clientesIds.length} Cliente(s)`;
+
+                html += `
+                    <div class="item-paquete ${esActivo} p-3" onclick="seleccionarPaquete('${p.id}')">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="badge bg-light text-dark border fw-bold">${p.codigo}</span>
+                            <span class="badge ${p.esRegular ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-primary-subtle text-primary border border-primary-subtle'}">${tipoTexto}</span>
+                        </div>
+                        <div class="fw-bold text-dark fs-6">${p.nombre}</div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function filtrarPaquetes() {
+            renderListaPaquetes();
+        }
+
+        window.seleccionarPaquete = function(id) {
+            paqueteSeleccionadoId = id;
+            renderListaPaquetes();
+            renderDetallePaquete();
+        };
+
+        function renderDetallePaquete() {
+            const container = document.getElementById('detallePaqueteContainer');
+            const paq = paquetesBD.find(p => p.id === paqueteSeleccionadoId);
+
+            if (!paq || !container) {
+                container.innerHTML = `<div class="p-4 text-center text-muted card-minimal">Selecciona un paquete para comenzar.</div>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <!-- PASO 1: DATOS DEL PAQUETE -->
+                <div class="card-minimal p-4 mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="paso-numero">1</span>
+                            <h6 class="fw-bold text-dark mb-0">Datos del Paquete</h6>
+                        </div>
+                        ${!paq.esRegular ? `
+                            <button class="btn btn-outline-danger btn-sm border-0" onclick="eliminarPaquete('${paq.id}')">
+                                <i class="fa-solid fa-trash me-1"></i> Borrar Paquete
+                            </button>
+                        ` : '<span class="badge bg-light text-muted border">Tarifa Base Principal</span>'}
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted">Código Corto</label>
+                            <input type="text" class="input-easy w-100 fw-bold" id="txtPaqCodigo" value="${paq.codigo}">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label small fw-bold text-muted">Nombre del Paquete</label>
+                            <input type="text" class="input-easy w-100 fw-bold" id="txtPaqNombre" value="${paq.nombre}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PASO 2: CLIENTES PERTENECIENTES -->
+                ${!paq.esRegular ? `
+                    <div class="card-minimal p-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="paso-numero">2</span>
+                                <h6 class="fw-bold text-dark mb-0">Clientes con esta tarifa (${paq.clientesIds.length})</h6>
+                            </div>
+                            <button class="btn btn-light border fw-semibold btn-sm" onclick="abrirModalClientes()">
+                                <i class="fa-solid fa-user-plus text-primary me-1"></i> Asignar Cliente
+                            </button>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            ${renderClientesChips(paq.clientesIds)}
+                        </div>
+                    </div>
+                ` : `
+                    <div class="p-3 mb-4 rounded-3 bg-success-subtle border border-success-subtle text-success small">
+                        <i class="fa-solid fa-circle-check me-2"></i>Esta tarifa es la <strong>General</strong>. Aplica para todos los clientes que no tengan un paquete especial.
+                    </div>
+                `}
+
+                <!-- PASO 3: TABLA DE PRECIOS POR SERVICIO -->
+                <div class="card-minimal p-4 mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="paso-numero">${paq.esRegular ? '2' : '3'}</span>
+                            <h6 class="fw-bold text-dark mb-0">Precios por Servicio</h6>
+                        </div>
+                        <button class="btn btn-light border fw-semibold btn-sm" onclick="agregarServicioEstandar()">
+                            <i class="fa-solid fa-plus text-primary me-1"></i> Agregar Servicio
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-borderless align-middle mb-0" id="tablaServicios">
+                            <thead>
+                                <tr class="text-muted small border-bottom">
+                                    <th style="width: 100px;">Código</th>
+                                    <th>Servicio</th>
+                                    <th style="width: 140px;">Precio Base (S/)</th>
+                                    <th style="width: 160px;">Kilo Adicional (S/)</th>
+                                    <th style="width: 50px;" class="text-center"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${renderFilasServicios(paq.servicios)}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- PASO 4: ZONAS Y TIEMPOS DE ENTREGA -->
+                <div class="card-minimal p-4 mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="paso-numero">${paq.esRegular ? '3' : '4'}</span>
+                            <h6 class="fw-bold text-dark mb-0">Zonas y Tiempos de Entrega</h6>
+                        </div>
+                        <button class="btn btn-light border fw-semibold btn-sm" onclick="agregarZona()">
+                            <i class="fa-solid fa-plus text-primary me-1"></i> Agregar Zona
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-borderless align-middle mb-0" id="tablaZonas">
+                            <thead>
+                                <tr class="text-muted small border-bottom">
+                                    <th>Nombre de Zona</th>
+                                    <th style="width: 180px;">Tiempo de Entrega</th>
+                                    <th>Ciudades / Distritos</th>
+                                    <th style="width: 50px;" class="text-center"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${renderFilasZonas(paq.zonas)}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderClientesChips(clientesIds) {
+            if (!clientesIds || clientesIds.length === 0) {
+                return `<span class="text-muted small">No hay clientes agregados todavía. Presiona "Asignar Cliente".</span>`;
+            }
+
+            return clientesIds.map(cliId => {
+                const cli = clientesBD.find(c => c.id === cliId);
+                const nombre = cli ? `${cli.nombreRazonSocial}` : cliId;
+
+                return `
+                    <span class="badge bg-light text-dark border p-2 d-flex align-items-center gap-2 rounded-3">
+                        <i class="fa-solid fa-building text-secondary"></i> ${nombre}
+                        <i class="fa-solid fa-xmark text-danger ms-1 cursor-pointer" title="Quitar" onclick="desvincularCliente('${cliId}')"></i>
+                    </span>
+                `;
+            }).join('');
+        }
+
+        function renderFilasServicios(servicios) {
+            if (!servicios || servicios.length === 0) {
+                return `<tr><td colspan="5" class="text-center text-muted p-3 small">No hay servicios en este paquete.</td></tr>`;
+            }
+
+            return servicios.map((s, index) => `
+                <tr data-srv-index="${index}">
+                    <td><span class="badge bg-light text-dark border fw-bold">${s.codigo}</span></td>
+                    <td><input type="text" class="input-easy w-100" value="${s.nombre}"></td>
+                    <td><input type="number" step="0.50" class="input-easy w-100 fw-bold text-primary input-srv-base" value="${s.precioBase}"></td>
+                    <td><input type="number" step="0.50" class="input-easy w-100 fw-bold text-dark input-srv-exceso" value="${s.precioExceso}"></td>
+                    <td class="text-center">
+                        <button class="btn btn-sm text-danger border-0" onclick="eliminarServicio(${index})"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderFilasZonas(zonas) {
+            if (!zonas || zonas.length === 0) {
+                return `<tr><td colspan="4" class="text-center text-muted p-3 small">No hay zonas configuradas.</td></tr>`;
+            }
+
+            return zonas.map((z, index) => {
+                const nombresCiudades = z.distritosIds.map(id => {
+                    const c = ciudadesBD.find(x => x.id === id);
+                    return c ? `<span class="badge bg-light text-dark border me-1">${c.distrito}</span>` : `<span class="badge bg-light text-dark border me-1">${id}</span>`;
+                }).join('');
+
+                return `
+                    <tr data-zona-index="${index}">
+                        <td><input type="text" class="input-easy w-100 fw-semibold input-zona-nombre" value="${z.nombre}"></td>
+                        <td><input type="text" class="input-easy w-100 text-success fw-bold input-zona-sla" value="${z.sla}" placeholder="Ej: 24 Horas"></td>
+                        <td><div class="d-flex align-items-center flex-wrap">${nombresCiudades}</div></td>
+                        <td class="text-center">
+                            <button class="btn btn-sm text-danger border-0" onclick="eliminarZona(${index})"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.agregarServicioEstandar = function() {
+            const paq = paquetesBD.find(p => p.id === paqueteSeleccionadoId);
+            if (!paq) return;
+
+            sincronizarEdicionesDesdeDOM();
+
+            let opciones = "Escribe el número del servicio a agregar:\n\n";
+            CATALOGO_SERVICIOS.forEach((cs, i) => {
+                opciones += `${i + 1}. [${cs.codigo}] ${cs.nombre}\n`;
+            });
+
+            const elegida = prompt(opciones);
+            const idx = parseInt(elegida) - 1;
+
+            if (!isNaN(idx) && CATALOGO_SERVICIOS[idx]) {
+                const item = CATALOGO_SERVICIOS[idx];
+
+                if (paq.servicios.some(s => s.codigo === item.codigo)) {
+                    alert(`El servicio ${item.codigo} ya está en la lista.`);
+                    return;
+                }
+
+                paq.servicios.push({
+                    codigo: item.codigo,
+                    nombre: item.nombre,
+                    precioBase: 0.00,
+                    precioExceso: 0.00
+                });
+
+                renderDetallePaquete();
+            }
+        };
+
+        window.eliminarServicio = function(index) {
+            const paq = paquetesBD.find(p => p.id === paqueteSeleccionadoId);
+            if (!paq) return;
+
+            sincronizarEdicionesDesdeDOM();
+            paq.servicios.splice(index, 1);
+            renderDetallePaquete();
+        };
+
+        window.agregarZona = function() {
+            const paq = paquetesBD.find(p => p.id === paqueteSeleccionadoId);
+            if (!paq) return;
+
+            sincronizarEdicionesDesdeDOM();
+
+            const nombre = prompt('Nombre de la Zona (Ejemplo: Zona Huancayo Urbano):');
+            if (!nombre) return;
+
+            paq.zonas.push({
+                id: `ZON-${Date.now()}`,
+                nombre: nombre,
+                sla: '24 Horas',
+                distritosIds: ['120101', '120107']
+            });
+
+            renderListaPaquetes();
+            renderDetallePaquete();
+        };
+
+        window.eliminarZona = function(index) {
+            const paq = paquetesBD.find(p => p.id === paqueteSeleccionadoId);
+            if (!paq) return;
+
+            sincronizarEdicionesDesdeDOM();
+            paq.zonas.splice(index, 1);
+            renderListaPaquetes();
+            renderDetallePaquete();
+        };
+
+        window.abrirModalClientes = function() {
+            filtrarClientesModal();
+            bsModalClientes.show();
+        };
+
+        window.filtrarClientesModal = function() {
+            const paq = paquetesBD.find(p => p.id === paqueteSeleccionadoId);
+            if (!paq) return;
+
+            const filtro = (document.getElementById('txtBuscarClienteModal')?.value || '').toLowerCase();
+            const container = document.getElementById('listaClientesModalContainer');
+
+            let html = '';
+            clientesBD.forEach(c => {
+                const coincide = c.nombreRazonSocial.toLowerCase().includes(filtro) || c.ruc.includes(filtro);
+                if (!coincide) return;
+
+                const asignadoAEste = paq.clientesIds.includes(c.id);
+
+                html += `
+                    <div class="list-group-item d-flex justify-content-between align-items-center p-3 border-0 border-bottom">
+                        <div>
+                            <div class="fw-bold small text-dark">${c.nombreRazonSocial}</div>
+                            <small class="text-muted">RUC: ${c.ruc}</small>
+                        </div>
+                        <div>
+                            ${asignadoAEste ? `
+                                <button class="btn btn-sm btn-outline-danger rounded-3" onclick="toggleClienteAsignacion('${c.id}')">Quitar</button>
+                            ` : `
+                                <button class="btn btn-sm btn-success rounded-3 text-white fw-bold" onclick="toggleClienteAsignacion('${c.id}')">Asignar</button>
+                            `}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html || `<div class="text-muted p-3 text-center">No hay clientes con ese nombre.</div>`;
+        };
+
+        window.toggleClienteAsignacion = function(cliId) {
+            const paq = paquetesBD.find(p => p.id === paqueteSeleccionadoId);
+            if (!paq) return;
+
+            if (paq.clientesIds.includes(cliId)) {
+                paq.clientesIds = paq.clientesIds.filter(id => id !== cliId);
+            } else {
+                paquetesBD.forEach(p => {
+                    p.clientesIds = p.clientesIds.filter(id => id !== cliId);
+                });
+                paq.clientesIds.push(cliId);
+            }
+
+            filtrarClientesModal();
+            renderListaPaquetes();
+            renderDetallePaquete();
+        };
+
+        window.desvincularCliente = function(cliId) {
+            const paq = paquetesBD.find(p => p.id === paqueteSeleccionadoId);
+            if (!paq) return;
+
+            paq.clientesIds = paq.clientesIds.filter(id => id !== cliId);
+            renderListaPaquetes();
+            renderDetallePaquete();
+        };
+
+        window.crearNuevoPaquete = function() {
+            sincronizarEdicionesDesdeDOM();
+
+            const codigo = prompt('Escribe el CÓDIGO (Ej: PAQ-LIMA):');
+            if (!codigo) return;
+
+            const nombre = prompt('Escribe el NOMBRE del paquete:');
+            if (!nombre) return;
+
+            const nuevoId = `PAQ-${Date.now()}`;
+            paquetesBD.push({
+                id: nuevoId,
+                codigo: codigo.toUpperCase(),
+                nombre: nombre,
+                esRegular: false,
+                clientesIds: [],
+                servicios: [
+                    { codigo: 'REG', nombre: 'Servicio Regular / Documentos', precioBase: 10.00, precioExceso: 2.00 },
+                    { codigo: 'PAQ', nombre: 'Paquetería / Cajas', precioBase: 13.00, precioExceso: 5.00 }
+                ],
+                zonas: [
+                    { id: `ZON-${Date.now()}`, nombre: 'Zona Local', sla: '24 Horas', distritosIds: ['120101'] }
+                ]
+            });
+
+            paqueteSeleccionadoId = nuevoId;
+            renderListaPaquetes();
+            renderDetallePaquete();
+        };
+
+        window.eliminarPaquete = function(id) {
+            const paq = paquetesBD.find(p => p.id === id);
+            if (paq && paq.esRegular) {
+                alert('No se puede eliminar el paquete General.');
+                return;
+            }
+
+            if (confirm(`¿Eliminar el paquete "${paq.nombre}"?`)) {
+                paquetesBD = paquetesBD.filter(p => p.id !== id);
+                paqueteSeleccionadoId = paquetesBD[0].id;
+                renderListaPaquetes();
+                renderDetallePaquete();
+            }
+        };
+
+        function sincronizarEdicionesDesdeDOM() {
+            const paq = paquetesBD.find(p => p.id === paqueteSeleccionadoId);
+            if (!paq) return;
+
+            const codInput = document.getElementById('txtPaqCodigo');
+            const nomInput = document.getElementById('txtPaqNombre');
+
+            if (codInput) paq.codigo = codInput.value.trim();
+            if (nomInput) paq.nombre = nomInput.value.trim();
+
+            const filasServicios = document.querySelectorAll('#tablaServicios tbody tr[data-srv-index]');
+            filasServicios.forEach(tr => {
+                const idx = parseInt(tr.getAttribute('data-srv-index'));
+                if (paq.servicios[idx]) {
+                    const base = parseFloat(tr.querySelector('.input-srv-base')?.value) || 0;
+                    const exceso = parseFloat(tr.querySelector('.input-srv-exceso')?.value) || 0;
+
+                    paq.servicios[idx].precioBase = base;
+                    paq.servicios[idx].precioExceso = exceso;
+                }
+            });
+
+            const filasZonas = document.querySelectorAll('#tablaZonas tbody tr[data-zona-index]');
+            filasZonas.forEach(tr => {
+                const idx = parseInt(tr.getAttribute('data-zona-index'));
+                if (paq.zonas[idx]) {
+                    const nom = tr.querySelector('.input-zona-nombre')?.value || '';
+                    const sla = tr.querySelector('.input-zona-sla')?.value || '';
+
+                    paq.zonas[idx].nombre = nom;
+                    paq.zonas[idx].sla = sla;
+                }
+            });
+        }
+
+        window.guardarTodoElModulo = function() {
+            sincronizarEdicionesDesdeDOM();
+            alert('¡Listo! Todos los cambios han sido guardados correctamente.');
+            renderListaPaquetes();
+            renderDetallePaquete();
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTarifas();
+        });
+    </script>
+</body>
+</html>
