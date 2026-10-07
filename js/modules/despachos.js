@@ -15,3 +15,4 @@ function renderDespachos(section, title, content) {
     }
 }
 
+window.renderDespachos = renderDespachos;

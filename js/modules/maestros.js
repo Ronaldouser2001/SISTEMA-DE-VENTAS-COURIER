@@ -30,3 +30,5 @@ function renderMaestros(section, title, content) {
             </div>`;
     }
 }
+
+window.renderMaestros = renderMaestros;

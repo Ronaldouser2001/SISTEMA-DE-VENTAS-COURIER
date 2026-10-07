@@ -18,3 +18,5 @@ function renderDistribucion(section, title, content) {
             break;
     }
 }
+
+window.renderDistribucion = renderDistribucion;

@@ -1,4 +1,196 @@
-﻿=== INICIO ARCHIVO: C:\1. RONALDO ARCHIVOS\PROYECTOS\SISTEMA DE VENTAS COURIER\SISTEMA DE VENTAS COURIER\ApiCourier\obj\Debug\net10.0\.NETCoreApp,Version=v10.0.AssemblyAttributes.cs ===
+﻿=== INICIO ARCHIVO: C:\1. RONALDO ARCHIVOS\PROYECTOS\SISTEMA DE VENTAS COURIER\SISTEMA DE VENTAS COURIER\ApiCourier\Controllers\CiudadesControllers.cs ===
+using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+
+namespace ApiCourier.Controllers
+{
+    public class CiudadDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Departamento { get; set; } = string.Empty;
+        public string Provincia { get; set; } = string.Empty;
+        public string Distrito { get; set; } = string.Empty;
+    }
+
+    [ApiController]
+    [Route("api/[controller]")]
+    public class CiudadesController : ControllerBase
+    {
+        private static readonly List<CiudadDto> _ciudades = new()
+        {
+            new CiudadDto { Id = "120101", Departamento = "JUNIN", Provincia = "HUANCAYO", Distrito = "HUANCAYO" },
+            new CiudadDto { Id = "120107", Departamento = "JUNIN", Provincia = "HUANCAYO", Distrito = "CHILCA" },
+            new CiudadDto { Id = "120114", Departamento = "JUNIN", Provincia = "HUANCAYO", Distrito = "EL TAMBO" },
+            new CiudadDto { Id = "120301", Departamento = "JUNIN", Provincia = "CHANCHAMAYO", Distrito = "CHANCHAMAYO" },
+            new CiudadDto { Id = "120302", Departamento = "JUNIN", Provincia = "CHANCHAMAYO", Distrito = "PERENE" },
+            new CiudadDto { Id = "120303", Departamento = "JUNIN", Provincia = "CHANCHAMAYO", Distrito = "PICHANAQUI" },
+            new CiudadDto { Id = "120304", Departamento = "JUNIN", Provincia = "CHANCHAMAYO", Distrito = "SAN RAMON" },
+            new CiudadDto { Id = "150101", Departamento = "LIMA", Provincia = "LIMA", Distrito = "LIMA" },
+            new CiudadDto { Id = "150122", Departamento = "LIMA", Provincia = "LIMA", Distrito = "MIRAFLORES" }
+        };
+
+        [HttpGet]
+        public IActionResult Get()
+        {
+            return Ok(_ciudades);
+        }
+    }
+}
+=== FIN ARCHIVO ===
+
+=== INICIO ARCHIVO: C:\1. RONALDO ARCHIVOS\PROYECTOS\SISTEMA DE VENTAS COURIER\SISTEMA DE VENTAS COURIER\ApiCourier\Controllers\ClientesController.cs ===
+using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace ApiCourier.Controllers
+{
+    public class ClienteDto
+    {
+        public string TipoDocumento { get; set; } = "DNI";
+        public string NumeroDocumento { get; set; } = string.Empty;
+        public string NombreRazonSocial { get; set; } = string.Empty;
+        public string Telefono { get; set; } = string.Empty;
+        public string Correo { get; set; } = string.Empty;
+        public string Direccion { get; set; } = string.Empty;
+        public string? NombrePaqueteTarifario { get; set; }
+    }
+
+    [ApiController]
+    [Route("api/[controller]")]
+    public class ClientesController : ControllerBase
+    {
+        private static List<ClienteDto> _clientes = new()
+        {
+            new ClienteDto 
+            { 
+                TipoDocumento = "RUC", 
+                NumeroDocumento = "20100047218", 
+                NombreRazonSocial = "BANCO DE CREDITO DEL PERU", 
+                Telefono = "011234567", 
+                Correo = "contacto@bcp.com.pe", 
+                Direccion = "Av. Centenario 156", 
+                NombrePaqueteTarifario = "Tarifa Corporativa BCP" 
+            }
+        };
+
+        [HttpGet]
+        public IActionResult Get([FromQuery] string? buscar)
+        {
+            if (string.IsNullOrWhiteSpace(buscar))
+                return Ok(_clientes);
+
+            var query = buscar.Trim().ToLower();
+            var resultado = _clientes.Where(c =>
+                c.NumeroDocumento.ToLower().Contains(query) ||
+                c.NombreRazonSocial.ToLower().Contains(query)
+            ).ToList();
+
+            return Ok(resultado);
+        }
+
+        [HttpPost]
+        public IActionResult Post([FromBody] ClienteDto cliente)
+        {
+            if (cliente == null || string.IsNullOrWhiteSpace(cliente.NumeroDocumento))
+                return BadRequest("Datos de cliente invÃ¡lidos.");
+
+            var existente = _clientes.FirstOrDefault(c => c.NumeroDocumento == cliente.NumeroDocumento);
+            if (existente != null)
+            {
+                _clientes.Remove(existente);
+            }
+
+            _clientes.Add(cliente);
+            return Ok(new { mensaje = "Cliente guardado exitosamente" });
+        }
+    }
+}
+=== FIN ARCHIVO ===
+
+=== INICIO ARCHIVO: C:\1. RONALDO ARCHIVOS\PROYECTOS\SISTEMA DE VENTAS COURIER\SISTEMA DE VENTAS COURIER\ApiCourier\Controllers\TarifasController.cs ===
+using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using ApiCourier.Models;
+
+namespace ApiCourier.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class TarifasController : ControllerBase
+    {
+        // SimulaciÃ³n de almacenamiento en memoria
+        private static List<PaqueteTarifario> _paquetes = new()
+        {
+            new PaqueteTarifario
+            {
+                Id = "PAQ-001",
+                Nombre = "Tarifa Regular General",
+                Tipo = "REGULAR",
+                Cliente = "General (Todos)",
+                SobreBase = 10.00m,
+                SobreExceso = 2.00m,
+                CajaBase = 13.00m,
+                CajaExceso = 5.00m,
+                Zonas = new List<ZonaTarifaria>
+                {
+                    new ZonaTarifaria { Id = 1, Nombre = "Zona Local Huancayo", Sla = "24 Horas", DistritosIds = new() { "120101", "120107", "120114" } },
+                    new ZonaTarifaria { Id = 2, Nombre = "Zona Selva Chanchamayo", Sla = "48 Horas", DistritosIds = new() { "120301", "120302" } }
+                }
+            }
+        };
+
+        [HttpGet]
+        public IActionResult Get()
+        {
+            return Ok(_paquetes);
+        }
+
+        [HttpPost]
+        public IActionResult Post([FromBody] PaqueteTarifario paquete)
+        {
+            if (paquete == null)
+                return BadRequest("Datos de paquete invÃ¡lidos.");
+
+            _paquetes.Add(paquete);
+            return Ok(new { mensaje = "Tarifa guardada exitosamente" });
+        }
+    }
+}
+=== FIN ARCHIVO ===
+
+=== INICIO ARCHIVO: C:\1. RONALDO ARCHIVOS\PROYECTOS\SISTEMA DE VENTAS COURIER\SISTEMA DE VENTAS COURIER\ApiCourier\Models\PaqueteTarifario.cs ===
+namespace ApiCourier.Models
+{
+    public class PaqueteTarifario
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Nombre { get; set; } = string.Empty;
+        public string Tipo { get; set; } = "REGULAR";
+        public string Cliente { get; set; } = "General (Todos)";
+        public decimal SobreBase { get; set; }
+        public decimal SobreExceso { get; set; }
+        public decimal CajaBase { get; set; }
+        public decimal CajaExceso { get; set; }
+        public List<ZonaTarifaria> Zonas { get; set; } = new();
+    }
+}
+=== FIN ARCHIVO ===
+
+=== INICIO ARCHIVO: C:\1. RONALDO ARCHIVOS\PROYECTOS\SISTEMA DE VENTAS COURIER\SISTEMA DE VENTAS COURIER\ApiCourier\Models\ZonaTarifaria.cs ===
+namespace ApiCourier.Models
+{
+    public class ZonaTarifaria
+    {
+        public long Id { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public string Sla { get; set; } = "24 Horas";
+        public List<string> DistritosIds { get; set; } = new();
+    }
+}
+=== FIN ARCHIVO ===
+
+=== INICIO ARCHIVO: C:\1. RONALDO ARCHIVOS\PROYECTOS\SISTEMA DE VENTAS COURIER\SISTEMA DE VENTAS COURIER\ApiCourier\obj\Debug\net10.0\.NETCoreApp,Version=v10.0.AssemblyAttributes.cs ===
 // <autogenerated />
 using System;
 using System.Reflection;
@@ -93,54 +285,6 @@ app.UseAuthorization();
 app.MapControllers(); 
 
 app.Run();
-=== FIN ARCHIVO ===
-
-=== INICIO ARCHIVO: C:\1. RONALDO ARCHIVOS\PROYECTOS\SISTEMA DE VENTAS COURIER\SISTEMA DE VENTAS COURIER\Controllers\TarifasController.cs ===
-using ApiCourier.Models;
-using Microsoft.AspNetCore.Mvc;
-
-namespace ApiCourier.Controllers
-{
-    [ApiController]
-    [Route("api/[controller]")]
-    public class TarifasController : ControllerBase
-    {
-        // SimulaciÃ³n de almacenamiento en memoria
-        private static List<PaqueteTarifario> _paquetes = new()
-        {
-            new PaqueteTarifario
-            {
-                Id = "PAQ-001",
-                Nombre = "Tarifa Regular General",
-                Tipo = "REGULAR",
-                Cliente = "General (Todos)",
-                SobreBase = 10.00m,
-                SobreExceso = 2.00m,
-                CajaBase = 13.00m,
-                CajaExceso = 5.00m,
-                Zonas = new List<ZonaTarifaria>
-                {
-                    new ZonaTarifaria { Id = 1, Nombre = "Zona Local Huancayo", Sla = "24 Horas", DistritosIds = new() { "120101", "120107", "120114" } },
-                    new ZonaTarifaria { Id = 2, Nombre = "Zona Selva Chanchamayo", Sla = "48 Horas", DistritosIds = new() { "120301", "120302" } }
-                }
-            }
-        };
-
-        [HttpGet]
-        public IActionResult Get()
-        {
-            return Ok(_paquetes);
-        }
-
-        [HttpPost]
-        public IActionResult Post([FromBody] List<PaqueteTarifario> paquetes)
-        {
-            if (paquetes == null) return BadRequest("Datos invÃ¡lidos.");
-            _paquetes = paquetes;
-            return Ok(new { mensaje = "Tarifas actualizadas correctamente" });
-        }
-    }
-}
 === FIN ARCHIVO ===
 
 === INICIO ARCHIVO: C:\1. RONALDO ARCHIVOS\PROYECTOS\SISTEMA DE VENTAS COURIER\SISTEMA DE VENTAS COURIER\css\styles.css ===
@@ -1659,7 +1803,7 @@ async function cargarTarifasEnVentas() {
     try {
         const res = await fetch(API_TARIFAS_URL);
         if (!res.ok) throw new Error("Error al obtener las tarifas desde la API");
-        
+
         paquetesBD = await res.json();
         console.log("Tarifas cargadas con Ã©xito en Ventas:", paquetesBD);
     } catch (error) {
@@ -1670,7 +1814,7 @@ async function cargarTarifasEnVentas() {
 async function renderVentas() {
     const contenedor = document.getElementById('dynamic-content');
     if (!contenedor) return;
-    
+
     await cargarTarifasEnVentas();
 
     contenedor.innerHTML = `
@@ -1880,18 +2024,19 @@ function inicializarEventosVentas() {
                 return;
             }
 
-            // Seleccionar paquete tarifario por defecto o la primera coincidencia
-            const paqueteActual = paquetesBD[0] || {};
-            
-            let tarifaBase = tipoCarga === 'SOBRE' 
-                ? (paqueteActual.sobreBase || 10.00) 
-                : (paqueteActual.cajaBase || 13.00);
+            // Obtener paquete activo (Por defecto el primero o regular)
+            const paqueteActual = paquetesBD[0] || {
+                sobreBase: 10.00,
+                sobreExceso: 2.00,
+                cajaBase: 13.00,
+                cajaExceso: 5.00
+            };
 
-            let costoExceso = tipoCarga === 'SOBRE' 
-                ? (paqueteActual.sobreExceso || 2.00) 
-                : (paqueteActual.cajaExceso || 5.00);
+            let tarifaBase = tipoCarga === 'SOBRE' ? paqueteActual.sobreBase : paqueteActual.cajaBase;
+            let costoExceso = tipoCarga === 'SOBRE' ? paqueteActual.sobreExceso : paqueteActual.cajaExceso;
 
-            let adicionalPeso = peso > 1.5 ? (peso - 1.5) * costoExceso : 0;
+            // CÃ¡lculo de peso base hasta 1.5 kg
+            let adicionalPeso = peso > 1.5 ? Math.ceil(peso - 1.5) * costoExceso : 0;
             let total = tarifaBase + adicionalPeso;
 
             document.getElementById('resumenBase').textContent = `S/ ${tarifaBase.toFixed(2)}`;
@@ -2155,37 +2300,6 @@ function navigate(modulo, accion) {
 
 // Registro global
 window.navigate = navigate;
-=== FIN ARCHIVO ===
-
-=== INICIO ARCHIVO: C:\1. RONALDO ARCHIVOS\PROYECTOS\SISTEMA DE VENTAS COURIER\SISTEMA DE VENTAS COURIER\Models\PaqueteTarifario.cs ===
-namespace ApiCourier.Models
-{
-    public class PaqueteTarifario
-    {
-        public string Id { get; set; } = string.Empty;
-        public string Nombre { get; set; } = string.Empty;
-        public string Tipo { get; set; } = "REGULAR";
-        public string Cliente { get; set; } = "General (Todos)";
-        public decimal SobreBase { get; set; }
-        public decimal SobreExceso { get; set; }
-        public decimal CajaBase { get; set; }
-        public decimal CajaExceso { get; set; }
-        public List<ZonaTarifaria> Zonas { get; set; } = new();
-    }
-}
-=== FIN ARCHIVO ===
-
-=== INICIO ARCHIVO: C:\1. RONALDO ARCHIVOS\PROYECTOS\SISTEMA DE VENTAS COURIER\SISTEMA DE VENTAS COURIER\Models\ZonaTarifaria.cs ===
-namespace ApiCourier.Models
-{
-    public class ZonaTarifaria
-    {
-        public long Id { get; set; }
-        public string Nombre { get; set; } = string.Empty;
-        public string Sla { get; set; } = "24 Horas";
-        public List<string> DistritosIds { get; set; } = new();
-    }
-}
 === FIN ARCHIVO ===
 
 === INICIO ARCHIVO: C:\1. RONALDO ARCHIVOS\PROYECTOS\SISTEMA DE VENTAS COURIER\SISTEMA DE VENTAS COURIER\dashboard.html ===

@@ -9,3 +9,5 @@ function renderReportes(section, title, content) {
     title.innerText = titles[section] || 'Reportes';
     content.innerHTML = `<div class="card p-4"><h5>${titles[section]}</h5><p>Métricas y reportes detallados.</p></div>`;
 }
+
+window.renderReportes = renderReportes;

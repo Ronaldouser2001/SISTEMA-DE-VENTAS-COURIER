@@ -272,3 +272,5 @@ function inicializarEventosVentas() {
         });
     }
 }
+
+window.renderVentas = renderVentas;

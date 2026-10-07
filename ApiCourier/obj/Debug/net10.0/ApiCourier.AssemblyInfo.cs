@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ApiCourier")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+111e786aa533273abbb1627c95630aba76bdc6f6")]
 [assembly: System.Reflection.AssemblyProductAttribute("ApiCourier")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ApiCourier")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

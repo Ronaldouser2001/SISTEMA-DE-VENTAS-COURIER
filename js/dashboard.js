@@ -1,11 +1,26 @@
-// js/dashboard.js - Enrutador principal según estructura oficial
+// js/dashboard.js - Enrutador principal corregido
 
 document.addEventListener('DOMContentLoaded', () => {
     inicializarNavegacion();
 
-    // Cargar la vista predeterminada al ingresar
-    cargarModulo('tarifario');
+    // Iniciar en blanco (pantalla de bienvenida vacía)
+    mostrarPantallaInicial();
 });
+
+function mostrarPantallaInicial() {
+    const contenedor = document.getElementById('dynamic-content');
+    const titulo = document.getElementById('tituloPagina');
+    if (titulo) titulo.textContent = 'Bienvenido al Sistema';
+    if (contenedor) {
+        contenedor.innerHTML = `
+            <div class="d-flex flex-column align-items-center justify-content-center h-100 py-5 text-muted">
+                <i class="fa-solid fa-box-archive display-1 mb-3 text-secondary opacity-50"></i>
+                <h3>Bienvenido al Sistema de Ventas y Courier</h3>
+                <p>Seleccione un módulo del menú lateral para comenzar a trabajar.</p>
+            </div>
+        `;
+    }
+}
 
 function inicializarNavegacion() {
     const enlaces = document.querySelectorAll('.item-menu');
@@ -38,26 +53,26 @@ function cargarModulo(accion) {
         // MAESTROS
         case 'crear-usuarios':
         case 'eliminar-usuarios':
-            titulo.textContent = `Maestros / ${obtenerTextoTitulo(accion)}`;
-            ejecutarModulo(renderMaestros, accion, 'Maestros (js/modules/maestros.js)', contenedor);
+            if (titulo) titulo.textContent = `Maestros / ${obtenerTextoTitulo(accion)}`;
+            ejecutarModulo(window.renderMaestros, accion, 'Maestros', contenedor);
             break;
 
         case 'clientes':
-            titulo.textContent = 'Maestros / Gestión de Clientes';
-            ejecutarModulo(renderClientes, accion, 'Clientes (js/modules/clientes.js)', contenedor);
+            if (titulo) titulo.textContent = 'Maestros / Gestión de Clientes';
+            ejecutarModulo(window.renderClientes, accion, 'Clientes', contenedor);
             break;
 
         // TARIFAS
         case 'tarifario':
-            titulo.textContent = 'Tarifas / Tarifario';
-            ejecutarModulo(renderTarifas, accion, 'Tarifas (js/modules/tarifas.js)', contenedor);
+            if (titulo) titulo.textContent = 'Tarifas / Tarifario';
+            ejecutarModulo(window.renderTarifas, accion, 'Tarifas', contenedor);
             break;
 
         // DESPACHOS
         case 'registrar-despacho':
         case 'guia-despacho':
-            titulo.textContent = `Despachos / ${obtenerTextoTitulo(accion)}`;
-            ejecutarModulo(renderDespachos, accion, 'Despachos (js/modules/despachos.js)', contenedor);
+            if (titulo) titulo.textContent = `Despachos / ${obtenerTextoTitulo(accion)}`;
+            ejecutarModulo(window.renderDespachos, accion, 'Despachos', contenedor);
             break;
 
         // DISTRIBUCIÓN
@@ -65,8 +80,8 @@ function cargarModulo(accion) {
         case 'asignacion':
         case 'devolucion':
         case 'coordinacion':
-            titulo.textContent = `Distribución / ${obtenerTextoTitulo(accion)}`;
-            ejecutarModulo(renderDistribucion, accion, 'Distribución (js/modules/distribucion.js)', contenedor);
+            if (titulo) titulo.textContent = `Distribución / ${obtenerTextoTitulo(accion)}`;
+            ejecutarModulo(window.renderDistribucion, accion, 'Distribución', contenedor);
             break;
 
         // REPORTES
@@ -75,15 +90,15 @@ function cargarModulo(accion) {
         case 'reporte-salida':
         case 'reporte-llegada':
         case 'reporte-asignados':
-            titulo.textContent = `Reportes / ${obtenerTextoTitulo(accion)}`;
-            ejecutarModulo(renderReportes, accion, 'Reportes (js/modules/reportes.js)', contenedor);
+            if (titulo) titulo.textContent = `Reportes / ${obtenerTextoTitulo(accion)}`;
+            ejecutarModulo(window.renderReportes, accion, 'Reportes', contenedor);
             break;
 
         // VENTAS
         case 'venta':
         case 'emision-comprobantes':
-            titulo.textContent = `Ventas / ${obtenerTextoTitulo(accion)}`;
-            ejecutarModulo(renderVentas, accion, 'Ventas (js/modules/ventas.js)', contenedor);
+            if (titulo) titulo.textContent = `Ventas / ${obtenerTextoTitulo(accion)}`;
+            ejecutarModulo(window.renderVentas, accion, 'Ventas', contenedor);
             break;
 
         // OPCIONES DE CUENTA

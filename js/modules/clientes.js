@@ -217,3 +217,5 @@ function limpiarFormularioCliente() {
     document.getElementById('txtDireccionCliente').value = '';
     document.getElementById('cboPaqueteCliente').value = '';
 }
+
+window.renderClientes = renderClientes;
