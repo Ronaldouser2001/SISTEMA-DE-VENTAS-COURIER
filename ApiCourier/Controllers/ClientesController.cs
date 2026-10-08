@@ -1,67 +1,69 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using ApiCourier.Data;
+using ApiCourier.Models;
 
 namespace ApiCourier.Controllers
 {
-    public class ClienteDto
-    {
-        public string TipoDocumento { get; set; } = "DNI";
-        public string NumeroDocumento { get; set; } = string.Empty;
-        public string NombreRazonSocial { get; set; } = string.Empty;
-        public string Telefono { get; set; } = string.Empty;
-        public string Correo { get; set; } = string.Empty;
-        public string Direccion { get; set; } = string.Empty;
-        public string? NombrePaqueteTarifario { get; set; }
-    }
-
     [ApiController]
     [Route("api/[controller]")]
     public class ClientesController : ControllerBase
     {
-        private static List<ClienteDto> _clientes = new()
-        {
-            new ClienteDto 
-            { 
-                TipoDocumento = "RUC", 
-                NumeroDocumento = "20100047218", 
-                NombreRazonSocial = "BANCO DE CREDITO DEL PERU", 
-                Telefono = "011234567", 
-                Correo = "contacto@bcp.com.pe", 
-                Direccion = "Av. Centenario 156", 
-                NombrePaqueteTarifario = "Tarifa Corporativa BCP" 
-            }
-        };
+        private readonly AppDbContext _context;
 
+        public ClientesController(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        // GET: api/clientes?buscar=123
         [HttpGet]
-        public IActionResult Get([FromQuery] string? buscar)
+        public async Task<IActionResult> Get([FromQuery] string? buscar)
         {
-            if (string.IsNullOrWhiteSpace(buscar))
-                return Ok(_clientes);
+            var query = _context.Clientes.Where(c => c.Estado);
 
-            var query = buscar.Trim().ToLower();
-            var resultado = _clientes.Where(c =>
-                c.NumeroDocumento.ToLower().Contains(query) ||
-                c.NombreRazonSocial.ToLower().Contains(query)
-            ).ToList();
+            if (!string.IsNullOrWhiteSpace(buscar))
+            {
+                var filtro = buscar.Trim().ToLower();
+                query = query.Where(c =>
+                    c.NumeroDocumento.ToLower().Contains(filtro) ||
+                    c.NombreRazonSocial.ToLower().Contains(filtro)
+                );
+            }
 
+            var resultado = await query.ToListAsync();
             return Ok(resultado);
         }
 
+        // POST: api/clientes (Crear o Actualizar)
         [HttpPost]
-        public IActionResult Post([FromBody] ClienteDto cliente)
+        public async Task<IActionResult> Post([FromBody] Cliente dto)
         {
-            if (cliente == null || string.IsNullOrWhiteSpace(cliente.NumeroDocumento))
+            if (dto == null || string.IsNullOrWhiteSpace(dto.NumeroDocumento))
                 return BadRequest("Datos de cliente inválidos.");
 
-            var existente = _clientes.FirstOrDefault(c => c.NumeroDocumento == cliente.NumeroDocumento);
+            var existente = await _context.Clientes
+                .FirstOrDefaultAsync(c => c.NumeroDocumento == dto.NumeroDocumento);
+
             if (existente != null)
             {
-                _clientes.Remove(existente);
+                // Actualizar cliente existente
+                existente.TipoDocumento = dto.TipoDocumento;
+                existente.NombreRazonSocial = dto.NombreRazonSocial;
+                existente.Telefono = dto.Telefono;
+                existente.Correo = dto.Correo;
+                existente.Direccion = dto.Direccion;
+                existente.NombrePaqueteTarifario = dto.NombrePaqueteTarifario;
+                existente.Estado = true;
+            }
+            else
+            {
+                // Crear nuevo cliente
+                _context.Clientes.Add(dto);
             }
 
-            _clientes.Add(cliente);
-            return Ok(new { mensaje = "Cliente guardado exitosamente" });
+            await _context.SaveChangesAsync();
+            return Ok(new { mensaje = "Cliente guardado exitosamente en PostgreSQL" });
         }
     }
 }

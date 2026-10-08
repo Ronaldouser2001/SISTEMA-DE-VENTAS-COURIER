@@ -3,59 +3,38 @@ ARCHIVO: C:\1.ARCHIVOS RONALDO\PROYECTOS\SISTEMA-DE-VENTAS-COURIER\ApiCourier\Co
 ==========================================
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.IO;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace ApiCourier.Controllers
 {
     public class CiudadDto
     {
-        [JsonPropertyName("id")]
         public string Id { get; set; } = string.Empty;
-
-        [JsonPropertyName("distrito")]
-        public string Distrito { get; set; } = string.Empty;
-
-        [JsonPropertyName("provincia")]
-        public string Provincia { get; set; } = string.Empty;
-
-        [JsonPropertyName("departamento")]
         public string Departamento { get; set; } = string.Empty;
+        public string Provincia { get; set; } = string.Empty;
+        public string Distrito { get; set; } = string.Empty;
     }
 
     [ApiController]
     [Route("api/[controller]")]
     public class CiudadesController : ControllerBase
     {
-        private readonly IWebHostEnvironment _env;
-
-        public CiudadesController(IWebHostEnvironment env)
+        private static readonly List<CiudadDto> _ciudades = new()
         {
-            _env = env;
-        }
+            new CiudadDto { Id = "120101", Departamento = "JUNIN", Provincia = "HUANCAYO", Distrito = "HUANCAYO" },
+            new CiudadDto { Id = "120107", Departamento = "JUNIN", Provincia = "HUANCAYO", Distrito = "CHILCA" },
+            new CiudadDto { Id = "120114", Departamento = "JUNIN", Provincia = "HUANCAYO", Distrito = "EL TAMBO" },
+            new CiudadDto { Id = "120301", Departamento = "JUNIN", Provincia = "CHANCHAMAYO", Distrito = "CHANCHAMAYO" },
+            new CiudadDto { Id = "120302", Departamento = "JUNIN", Provincia = "CHANCHAMAYO", Distrito = "PERENE" },
+            new CiudadDto { Id = "120303", Departamento = "JUNIN", Provincia = "CHANCHAMAYO", Distrito = "PICHANAQUI" },
+            new CiudadDto { Id = "120304", Departamento = "JUNIN", Provincia = "CHANCHAMAYO", Distrito = "SAN RAMON" },
+            new CiudadDto { Id = "150101", Departamento = "LIMA", Provincia = "LIMA", Distrito = "LIMA" },
+            new CiudadDto { Id = "150122", Departamento = "LIMA", Provincia = "LIMA", Distrito = "MIRAFLORES" }
+        };
 
         [HttpGet]
         public IActionResult Get()
         {
-            // Ruta hacia el archivo ciudades.json en la raÃ­z de la Web API
-            var jsonPath = Path.Combine(_env.ContentRootPath, "ciudades.json");
-
-            if (!System.IO.File.Exists(jsonPath))
-            {
-                return NotFound("El archivo ciudades.json no fue encontrado.");
-            }
-
-            var jsonText = System.IO.File.ReadAllText(jsonPath);
-            
-            var options = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            };
-
-            var ciudades = JsonSerializer.Deserialize<List<CiudadDto>>(jsonText, options);
-
-            return Ok(ciudades);
+            return Ok(_ciudades);
         }
     }
 }
@@ -248,7 +227,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ApiCourier")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+166fe0ed64e6f7add43fbb02d33b21596ca7bb9a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+299272b4789c527b0ac885baa8c7c28c4b790f3a")]
 [assembly: System.Reflection.AssemblyProductAttribute("ApiCourier")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ApiCourier")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
@@ -823,8 +802,6 @@ function limpiarFormularioCliente() {
     document.getElementById('cboPaqueteCliente').value = '';
 }
 
-window.renderClientes = renderClientes;
-
 
 ==========================================
 ARCHIVO: C:\1.ARCHIVOS RONALDO\PROYECTOS\SISTEMA-DE-VENTAS-COURIER\js\modules\despachos.js
@@ -846,7 +823,6 @@ function renderDespachos(section, title, content) {
     }
 }
 
-window.renderDespachos = renderDespachos;
 
 
 ==========================================
@@ -872,8 +848,6 @@ function renderDistribucion(section, title, content) {
             break;
     }
 }
-
-window.renderDistribucion = renderDistribucion;
 
 
 ==========================================
@@ -912,8 +886,6 @@ function renderMaestros(section, title, content) {
     }
 }
 
-window.renderMaestros = renderMaestros;
-
 
 ==========================================
 ARCHIVO: C:\1.ARCHIVOS RONALDO\PROYECTOS\SISTEMA-DE-VENTAS-COURIER\js\modules\reportes.js
@@ -929,8 +901,6 @@ function renderReportes(section, title, content) {
     title.innerText = titles[section] || 'Reportes';
     content.innerHTML = `<div class="card p-4"><h5>${titles[section]}</h5><p>MÃ©tricas y reportes detallados.</p></div>`;
 }
-
-window.renderReportes = renderReportes;
 
 
 ==========================================
@@ -2133,8 +2103,6 @@ function inicializarEventosVentas() {
     }
 }
 
-window.renderVentas = renderVentas;
-
 
 ==========================================
 ARCHIVO: C:\1.ARCHIVOS RONALDO\PROYECTOS\SISTEMA-DE-VENTAS-COURIER\js\auth.js
@@ -2182,29 +2150,14 @@ document.addEventListener('DOMContentLoaded', () => {
 ==========================================
 ARCHIVO: C:\1.ARCHIVOS RONALDO\PROYECTOS\SISTEMA-DE-VENTAS-COURIER\js\dashboard.js
 ==========================================
-// js/dashboard.js - Enrutador principal corregido
+// js/dashboard.js - Enrutador principal segÃºn estructura oficial
 
 document.addEventListener('DOMContentLoaded', () => {
     inicializarNavegacion();
 
-    // Iniciar en blanco (pantalla de bienvenida vacÃ­a)
-    mostrarPantallaInicial();
+    // Cargar la vista predeterminada al ingresar
+    cargarModulo('tarifario');
 });
-
-function mostrarPantallaInicial() {
-    const contenedor = document.getElementById('dynamic-content');
-    const titulo = document.getElementById('tituloPagina');
-    if (titulo) titulo.textContent = 'Bienvenido al Sistema';
-    if (contenedor) {
-        contenedor.innerHTML = `
-            <div class="d-flex flex-column align-items-center justify-content-center h-100 py-5 text-muted">
-                <i class="fa-solid fa-box-archive display-1 mb-3 text-secondary opacity-50"></i>
-                <h3>Bienvenido al Sistema de Ventas y Courier</h3>
-                <p>Seleccione un mÃ³dulo del menÃº lateral para comenzar a trabajar.</p>
-            </div>
-        `;
-    }
-}
 
 function inicializarNavegacion() {
     const enlaces = document.querySelectorAll('.item-menu');
@@ -2237,26 +2190,26 @@ function cargarModulo(accion) {
         // MAESTROS
         case 'crear-usuarios':
         case 'eliminar-usuarios':
-            if (titulo) titulo.textContent = `Maestros / ${obtenerTextoTitulo(accion)}`;
-            ejecutarModulo(window.renderMaestros, accion, 'Maestros', contenedor);
+            titulo.textContent = `Maestros / ${obtenerTextoTitulo(accion)}`;
+            ejecutarModulo(renderMaestros, accion, 'Maestros (js/modules/maestros.js)', contenedor);
             break;
 
         case 'clientes':
-            if (titulo) titulo.textContent = 'Maestros / GestiÃ³n de Clientes';
-            ejecutarModulo(window.renderClientes, accion, 'Clientes', contenedor);
+            titulo.textContent = 'Maestros / GestiÃ³n de Clientes';
+            ejecutarModulo(renderClientes, accion, 'Clientes (js/modules/clientes.js)', contenedor);
             break;
 
         // TARIFAS
         case 'tarifario':
-            if (titulo) titulo.textContent = 'Tarifas / Tarifario';
-            ejecutarModulo(window.renderTarifas, accion, 'Tarifas', contenedor);
+            titulo.textContent = 'Tarifas / Tarifario';
+            ejecutarModulo(renderTarifas, accion, 'Tarifas (js/modules/tarifas.js)', contenedor);
             break;
 
         // DESPACHOS
         case 'registrar-despacho':
         case 'guia-despacho':
-            if (titulo) titulo.textContent = `Despachos / ${obtenerTextoTitulo(accion)}`;
-            ejecutarModulo(window.renderDespachos, accion, 'Despachos', contenedor);
+            titulo.textContent = `Despachos / ${obtenerTextoTitulo(accion)}`;
+            ejecutarModulo(renderDespachos, accion, 'Despachos (js/modules/despachos.js)', contenedor);
             break;
 
         // DISTRIBUCIÃ“N
@@ -2264,8 +2217,8 @@ function cargarModulo(accion) {
         case 'asignacion':
         case 'devolucion':
         case 'coordinacion':
-            if (titulo) titulo.textContent = `DistribuciÃ³n / ${obtenerTextoTitulo(accion)}`;
-            ejecutarModulo(window.renderDistribucion, accion, 'DistribuciÃ³n', contenedor);
+            titulo.textContent = `DistribuciÃ³n / ${obtenerTextoTitulo(accion)}`;
+            ejecutarModulo(renderDistribucion, accion, 'DistribuciÃ³n (js/modules/distribucion.js)', contenedor);
             break;
 
         // REPORTES
@@ -2274,15 +2227,15 @@ function cargarModulo(accion) {
         case 'reporte-salida':
         case 'reporte-llegada':
         case 'reporte-asignados':
-            if (titulo) titulo.textContent = `Reportes / ${obtenerTextoTitulo(accion)}`;
-            ejecutarModulo(window.renderReportes, accion, 'Reportes', contenedor);
+            titulo.textContent = `Reportes / ${obtenerTextoTitulo(accion)}`;
+            ejecutarModulo(renderReportes, accion, 'Reportes (js/modules/reportes.js)', contenedor);
             break;
 
         // VENTAS
         case 'venta':
         case 'emision-comprobantes':
-            if (titulo) titulo.textContent = `Ventas / ${obtenerTextoTitulo(accion)}`;
-            ejecutarModulo(window.renderVentas, accion, 'Ventas', contenedor);
+            titulo.textContent = `Ventas / ${obtenerTextoTitulo(accion)}`;
+            ejecutarModulo(renderVentas, accion, 'Ventas (js/modules/ventas.js)', contenedor);
             break;
 
         // OPCIONES DE CUENTA
@@ -2396,7 +2349,6 @@ ARCHIVO: C:\1.ARCHIVOS RONALDO\PROYECTOS\SISTEMA-DE-VENTAS-COURIER\dashboard.htm
 ==========================================
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -2408,14 +2360,12 @@ ARCHIVO: C:\1.ARCHIVOS RONALDO\PROYECTOS\SISTEMA-DE-VENTAS-COURIER\dashboard.htm
     <!-- Estilos Personalizados -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
-
 <body>
 
     <div class="d-flex" id="wrapper">
         <!-- MENÃš LATERAL (SIDEBAR) -->
-        <nav id="sidebar" class="bg-dark text-white d-flex flex-column justify-content-between p-3"
-            style="min-width: 260px; min-height: 100vh;">
-
+        <nav id="sidebar" class="bg-dark text-white d-flex flex-column justify-content-between p-3" style="min-width: 260px; min-height: 100vh;">
+            
             <div>
                 <!-- ENCABEZADO MARCA -->
                 <div class="d-flex align-items-center gap-2 mb-4 px-2">
@@ -2427,111 +2377,86 @@ ARCHIVO: C:\1.ARCHIVOS RONALDO\PROYECTOS\SISTEMA-DE-VENTAS-COURIER\dashboard.htm
 
                 <!-- LISTA DE NAVEGACIÃ“N PRINCIPAL -->
                 <ul class="nav flex-column gap-1" id="menuNavegacion">
-
+                    
                     <!-- 1. MAESTROS -->
                     <li class="nav-item">
-                        <a class="nav-link text-white d-flex align-items-center justify-content-between rounded"
-                            data-bs-toggle="collapse" href="#menuMaestros" role="button" aria-expanded="false">
+                        <a class="nav-link text-white d-flex align-items-center justify-content-between rounded" data-bs-toggle="collapse" href="#menuMaestros" role="button" aria-expanded="false">
                             <span><i class="fa-solid fa-users-gear me-2 text-warning"></i>Maestros</span>
                             <i class="fa-solid fa-chevron-down small"></i>
                         </a>
-                        <div class="collapse ps-3 mt-1" id="menuMaestros">
+                        <div class="collapse ps-3 mt-1" id="menuMaestros" data-bs-parent="#menuNavegacion">
                             <!-- OpciÃ³n Clientes -->
-                            <span class="small text-muted fw-bold d-block my-1"><i
-                                    class="fa-solid fa-address-book me-1"></i>Clientes</span>
-                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu"
-                                data-accion="clientes">GestiÃ³n de Clientes</a>
+                            <span class="small text-muted fw-bold d-block my-1"><i class="fa-solid fa-address-book me-1"></i>Clientes</span>
+                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu" data-accion="clientes">GestiÃ³n de Clientes</a>
 
                             <!-- Subgrupo Usuarios -->
-                            <span class="small text-muted fw-bold d-block my-1 mt-2"><i
-                                    class="fa-solid fa-user me-1"></i>Usuarios</span>
-                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu"
-                                data-accion="crear-usuarios">Crear usuarios</a>
-                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu"
-                                data-accion="eliminar-usuarios">Eliminar usuarios</a>
+                            <span class="small text-muted fw-bold d-block my-1 mt-2"><i class="fa-solid fa-user me-1"></i>Usuarios</span>
+                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu" data-accion="crear-usuarios">Crear usuarios</a>
+                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu" data-accion="eliminar-usuarios">Eliminar usuarios</a>
                         </div>
                     </li>
 
                     <!-- 2. TARIFAS -->
                     <li class="nav-item">
-                        <a class="nav-link text-white d-flex align-items-center justify-content-between rounded"
-                            data-bs-toggle="collapse" href="#menuTarifas" role="button" aria-expanded="false">
+                        <a class="nav-link text-white d-flex align-items-center justify-content-between rounded" data-bs-toggle="collapse" href="#menuTarifas" role="button" aria-expanded="false">
                             <span><i class="fa-solid fa-tags me-2 text-warning"></i>Tarifas</span>
                             <i class="fa-solid fa-chevron-down small"></i>
                         </a>
-                        <div class="collapse ps-3 mt-1" id="menuTarifas">
-                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu"
-                                data-accion="tarifario">Tarifario</a>
+                        <div class="collapse ps-3 mt-1" id="menuTarifas" data-bs-parent="#menuNavegacion">
+                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu" data-accion="tarifario">Tarifario</a>
                         </div>
                     </li>
 
                     <!-- 3. DESPACHOS -->
                     <li class="nav-item">
-                        <a class="nav-link text-white d-flex align-items-center justify-content-between rounded"
-                            data-bs-toggle="collapse" href="#menuDespachos" role="button" aria-expanded="false">
+                        <a class="nav-link text-white d-flex align-items-center justify-content-between rounded" data-bs-toggle="collapse" href="#menuDespachos" role="button" aria-expanded="false">
                             <span><i class="fa-solid fa-truck-fast me-2 text-warning"></i>Despachos</span>
                             <i class="fa-solid fa-chevron-down small"></i>
                         </a>
-                        <div class="collapse ps-3 mt-1" id="menuDespachos">
-                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu"
-                                data-accion="registrar-despacho">Registrar envÃ­os para despacho</a>
-                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu"
-                                data-accion="guia-despacho">GuÃ­a de despacho</a>
+                        <div class="collapse ps-3 mt-1" id="menuDespachos" data-bs-parent="#menuNavegacion">
+                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu" data-accion="registrar-despacho">Registrar envÃ­os para despacho</a>
+                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu" data-accion="guia-despacho">GuÃ­a de despacho</a>
                         </div>
                     </li>
 
                     <!-- 4. DISTRIBUCIÃ“N -->
                     <li class="nav-item">
-                        <a class="nav-link text-white d-flex align-items-center justify-content-between rounded"
-                            data-bs-toggle="collapse" href="#menuDistribucion" role="button" aria-expanded="false">
+                        <a class="nav-link text-white d-flex align-items-center justify-content-between rounded" data-bs-toggle="collapse" href="#menuDistribucion" role="button" aria-expanded="false">
                             <span><i class="fa-solid fa-diagram-project me-2 text-warning"></i>DistribuciÃ³n</span>
                             <i class="fa-solid fa-chevron-down small"></i>
                         </a>
-                        <div class="collapse ps-3 mt-1" id="menuDistribucion">
-                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu"
-                                data-accion="recepcion">RecepciÃ³n</a>
-                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu"
-                                data-accion="asignacion">AsignaciÃ³n</a>
-                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu"
-                                data-accion="devolucion">DevoluciÃ³n</a>
-                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu"
-                                data-accion="coordinacion">CoordinaciÃ³n</a>
+                        <div class="collapse ps-3 mt-1" id="menuDistribucion" data-bs-parent="#menuNavegacion">
+                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu" data-accion="recepcion">RecepciÃ³n</a>
+                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu" data-accion="asignacion">AsignaciÃ³n</a>
+                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu" data-accion="devolucion">DevoluciÃ³n</a>
+                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu" data-accion="coordinacion">CoordinaciÃ³n</a>
                         </div>
                     </li>
 
                     <!-- 5. REPORTES -->
                     <li class="nav-item">
-                        <a class="nav-link text-white d-flex align-items-center justify-content-between rounded"
-                            data-bs-toggle="collapse" href="#menuReportes" role="button" aria-expanded="false">
+                        <a class="nav-link text-white d-flex align-items-center justify-content-between rounded" data-bs-toggle="collapse" href="#menuReportes" role="button" aria-expanded="false">
                             <span><i class="fa-solid fa-chart-line me-2 text-warning"></i>Reportes</span>
                             <i class="fa-solid fa-chevron-down small"></i>
                         </a>
-                        <div class="collapse ps-3 mt-1" id="menuReportes">
-                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu"
-                                data-accion="reporte-cliente">Por Cliente</a>
-                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu"
-                                data-accion="reporte-envios">EnvÃ­os</a>
-                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu"
-                                data-accion="reporte-salida">Salida</a>
-                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu"
-                                data-accion="reporte-llegada">Llegada</a>
-                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu"
-                                data-accion="reporte-asignados">Asignados</a>
+                        <div class="collapse ps-3 mt-1" id="menuReportes" data-bs-parent="#menuNavegacion">
+                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu" data-accion="reporte-cliente">Por Cliente</a>
+                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu" data-accion="reporte-envios">EnvÃ­os</a>
+                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu" data-accion="reporte-salida">Salida</a>
+                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu" data-accion="reporte-llegada">Llegada</a>
+                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu" data-accion="reporte-asignados">Asignados</a>
                         </div>
                     </li>
 
                     <!-- 6. VENTAS -->
                     <li class="nav-item">
-                        <a class="nav-link text-white d-flex align-items-center justify-content-between rounded"
-                            data-bs-toggle="collapse" href="#menuVentas" role="button" aria-expanded="false">
+                        <a class="nav-link text-white d-flex align-items-center justify-content-between rounded" data-bs-toggle="collapse" href="#menuVentas" role="button" aria-expanded="false">
                             <span><i class="fa-solid fa-cart-shopping me-2 text-warning"></i>Ventas</span>
                             <i class="fa-solid fa-chevron-down small"></i>
                         </a>
-                        <div class="collapse ps-3 mt-1" id="menuVentas">
-                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu"
-                                data-accion="venta">Venta</a>
-                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu"
-                                data-accion="emision-comprobantes">EmisiÃ³n de comprobantes</a>
+                        <div class="collapse ps-3 mt-1" id="menuVentas" data-bs-parent="#menuNavegacion">
+                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu" data-accion="venta">Venta</a>
+                            <a href="#" class="nav-link text-white-50 small rounded py-1 px-2 item-menu" data-accion="emision-comprobantes">EmisiÃ³n de comprobantes</a>
                         </div>
                     </li>
 
@@ -2540,8 +2465,7 @@ ARCHIVO: C:\1.ARCHIVOS RONALDO\PROYECTOS\SISTEMA-DE-VENTAS-COURIER\dashboard.htm
 
             <!-- 3. OPCIONES DE CUENTA (PIE DEL MENÃš) -->
             <div class="border-top border-secondary pt-3 mt-3">
-                <a href="#" class="nav-link text-white-50 small py-1 px-2 mb-1 rounded item-menu"
-                    data-accion="cambiar-cuenta">
+                <a href="#" class="nav-link text-white-50 small py-1 px-2 mb-1 rounded item-menu" data-accion="cambiar-cuenta">
                     <i class="fa-solid fa-arrows-rotate me-2"></i>Cambiar de cuenta
                 </a>
                 <a href="#" class="nav-link text-danger small py-1 px-2 rounded item-menu" data-accion="cerrar-sesion">
@@ -2570,20 +2494,15 @@ ARCHIVO: C:\1.ARCHIVOS RONALDO\PROYECTOS\SISTEMA-DE-VENTAS-COURIER\dashboard.htm
 
     <!-- Bootstrap JS + Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Carga de MÃ³dulos JS -->
-    <script src="js/modules/maestros.js"></script>
+    <!-- MÃ³dulos JS -->
     <script src="js/modules/tarifas.js"></script>
     <script src="js/modules/clientes.js"></script>
+    <script src="js/modules/ventas.js"></script>
+    <script src="js/dashboard.js"></script>
     <script src="js/modules/despachos.js"></script>
     <script src="js/modules/distribucion.js"></script>
     <script src="js/modules/reportes.js"></script>
-    <script src="js/modules/ventas.js"></script>
-
-    <!-- Enrutador Principal -->
-    <script src="js/dashboard.js"></script>
 </body>
-
 </html>
 
 

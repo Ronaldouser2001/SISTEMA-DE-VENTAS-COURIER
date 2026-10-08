@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\1. RONALDO ARCHIVOS\\PROYECTOS\\SISTEMA DE VENTAS COURIER\\SISTEMA DE VENTAS COURIER\\ApiCourier\\ApiCourier.csproj": {}
+    "C:\\1.ARCHIVOS RONALDO\\PROYECTOS\\SISTEMA-DE-VENTAS-COURIER\\ApiCourier\\ApiCourier.csproj": {}
   },
   "projects": {
-    "C:\\1. RONALDO ARCHIVOS\\PROYECTOS\\SISTEMA DE VENTAS COURIER\\SISTEMA DE VENTAS COURIER\\ApiCourier\\ApiCourier.csproj": {
+    "C:\\1.ARCHIVOS RONALDO\\PROYECTOS\\SISTEMA-DE-VENTAS-COURIER\\ApiCourier\\ApiCourier.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\1. RONALDO ARCHIVOS\\PROYECTOS\\SISTEMA DE VENTAS COURIER\\SISTEMA DE VENTAS COURIER\\ApiCourier\\ApiCourier.csproj",
+        "projectUniqueName": "C:\\1.ARCHIVOS RONALDO\\PROYECTOS\\SISTEMA-DE-VENTAS-COURIER\\ApiCourier\\ApiCourier.csproj",
         "projectName": "ApiCourier",
-        "projectPath": "C:\\1. RONALDO ARCHIVOS\\PROYECTOS\\SISTEMA DE VENTAS COURIER\\SISTEMA DE VENTAS COURIER\\ApiCourier\\ApiCourier.csproj",
-        "packagesPath": "C:\\Users\\USUARIO\\.nuget\\packages\\",
-        "outputPath": "C:\\1. RONALDO ARCHIVOS\\PROYECTOS\\SISTEMA DE VENTAS COURIER\\SISTEMA DE VENTAS COURIER\\ApiCourier\\obj\\",
+        "projectPath": "C:\\1.ARCHIVOS RONALDO\\PROYECTOS\\SISTEMA-DE-VENTAS-COURIER\\ApiCourier\\ApiCourier.csproj",
+        "packagesPath": "C:\\Users\\RONALDO\\.nuget\\packages\\",
+        "outputPath": "C:\\1.ARCHIVOS RONALDO\\PROYECTOS\\SISTEMA-DE-VENTAS-COURIER\\ApiCourier\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\USUARIO\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\RONALDO\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
@@ -49,6 +49,22 @@
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
               "version": "[10.0.12, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[10.0.12, )"
+            },
+            "Microsoft.EntityFrameworkCore.Tools": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[10.0.12, )"
+            },
+            "Npgsql.EntityFrameworkCore.PostgreSQL": {
+              "target": "Package",
+              "version": "[10.0.3, )"
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
